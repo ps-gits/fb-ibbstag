@@ -56,16 +56,11 @@ export const generateOrderNumber = (length:number): string => {
  * @description this value is Empty Check
  */
 export const localeDateString = (departureDateString: string): string => {
-  const departureTimestamp = parseInt(departureDateString.substring(6, 19));
-  const departureDateISO = new Date(departureTimestamp).toISOString();
-  const departureDate = new Date(departureDateISO); 
-  const formattedDate = departureDate.toLocaleDateString("en-US", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  }); 
-  
-  return formattedDate;
+    const dateObject = new Date(departureDateString);
+    const year = dateObject.getFullYear();
+    const month = String(dateObject.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObject.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 /**
@@ -75,9 +70,11 @@ export const localeDateString = (departureDateString: string): string => {
  * @description this value is Empty Check
  */
 export const toISOString = (departureDateString: string): string => {
-  let Otr2 = parseInt(departureDateString.substring(6, 19));
-  let Otr = new Date(Otr2).toISOString();
-  return Otr;
+   const dateObject = new Date(departureDateString);
+    const year = dateObject.getFullYear();
+    const month = String(dateObject.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObject.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 /**
  * @method formattedTime
@@ -86,15 +83,11 @@ export const toISOString = (departureDateString: string): string => {
  * @description this value is Empty Check
  */
 export const formattedTime = (timestamp: string): string => { 
-    const numericTimestamp = parseInt(timestamp.match(/\d+/)[0], 10) / 1000;
-    const date = new Date(numericTimestamp * 1000);
-
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-
-    const formattedTime = `${hours}:${minutes}:${seconds}`;
-    return formattedTime;
+  const dateObject = new Date(timestamp);
+  const hours = String(dateObject.getHours()).padStart(2, '0');
+  const minutes = String(dateObject.getMinutes()).padStart(2, '0');
+  const formattedTime = `${hours}:${minutes}`;
+  return formattedTime;
 }
 
 /**
@@ -115,5 +108,27 @@ export const extractKeyValuePairs = (inputString: string): Array<any> => {
   }
   return keyValuePairs;
 }
+
+
+/**
+ * @method createListView
+ * @param {HTMLUListElement } length
+ * @returns {HTMLElement} Html
+ * @description this value is Empty Check
+ */
+export const parseChildren = (children: any): any => { 
+
+      return children.map(child => {
+        const parsedChild = {
+            Text: child.Text,
+            Value: child.Value,
+            Children: parseChildren(child.Children),
+            Extensions: null
+        };
+        return parsedChild;
+    }); 
+};
+
+
  
  

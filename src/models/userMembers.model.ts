@@ -1,6 +1,6 @@
 import { model, Schema, Document } from 'mongoose';
 import { User } from '@interfaces/users.interface';
-const userSchema: Schema = new Schema({
+const userMembersSchema: Schema = new Schema({
   ref: { type: String  },
   CivilityCode: { type: String ,required: true}, 
   FirstName:{ type: String, lowercase: true, trim: true ,required: true},
@@ -17,5 +17,5 @@ const userSchema: Schema = new Schema({
   Addresses: { type: Array},
   Documents: { type: Array},
 }); 
-const userModel = model<User & Document>('User', userSchema); 
-export default userModel;
+const userMembersModel = model<User & Document>('UserMembers', userMembersSchema); 
+export default userMembersModel;

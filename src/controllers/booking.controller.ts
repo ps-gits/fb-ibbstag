@@ -3,7 +3,7 @@ import { CreateBookingDto,CreateBookingExchangeDto,loadBookingDto,calendarDto,Mo
   SearchBookingDto,PrepareBookingModiDto,
   CreateTicketDto,LoadMCOTicketDto,SendTicketConfirmationDto,
   AddItineraryDto,PrepareAdditionalItineraryDto,CancelBookingDto,PrepareCancelBookingDto,paymentRequestDto
-  ,PaymentCheckDto} from '@dtos/booking.dto';
+  ,PaymentCheckDto,HeadersDto} from '@dtos/booking.dto';
 import { Booking,LoadBooking,Calendar,Payment} from '@interfaces/booking.interface';
 import bookingService from '@services/booking.service';
 import { Search } from '@interfaces/search.interface';

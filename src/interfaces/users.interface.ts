@@ -44,7 +44,12 @@ export interface CreateUser {
   Phones: Array<string>;
   Addresses: Array<string>;
   Documents: Array<string>;
+  Members: Array<string>;
 }
 export interface ForgotPassword { 
   CivilityCode: string;
+}
+export interface BookingHistory {
+}
+export interface ProfileData {
 }

@@ -23,6 +23,7 @@ export interface Location {
     TargetDate: string;
     OriginCode: string;
     DestinationCode: string;
+    Date:string;
   }  
   export interface AllowedOriginDestinations {
     _id: string;
@@ -70,15 +71,4 @@ export interface Location {
     Extensions:String,
   }
 
-  export interface PersonalDetails{
-    _id: string;
-    pnrcode:string;
-    name: string;
-    surname:string;
-    origin: string;
-    destination: string;
-    originDate: string;
-    destinationDate: string; 
-  }
-  
   

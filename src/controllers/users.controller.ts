@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
-import { CreateUserDto,ForgotPasswordDto} from '@dtos/users.dto';
-import { User,CreateUser,UpdateUser } from '@interfaces/users.interface';
+import { CreateUserDto,ForgotPasswordDto,UpdateUserDto} from '@dtos/users.dto';
+import { User,CreateUser,UpdateUser,BookingHistory,ProfileData} from '@interfaces/users.interface';
 import userService from '@services/users.service';
 
 class UsersController {
@@ -9,8 +9,8 @@ class UsersController {
   public updateUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId: string = req.params.id;
-      const userData: CreateUserDto = req.body;
-      const updateUserData: CreateUser = await this.userService.updateUser(userId, userData);
+      const userData: UpdateUserDto = req.body;
+      const updateUserData: ProfileData = await this.userService.updateUser(userId, userData);
 
       res.status(200).json({ data: updateUserData, message: 'updated' });
     } catch (error) {
@@ -39,6 +39,30 @@ class UsersController {
       next(error);
     }
   };
+
+  public bookingHistory = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId: string = req.params.id; 
+      const BookingHistoryData: BookingHistory = await this.userService.bookingHistory(userId);
+
+      res.status(200).json({ data: BookingHistoryData, message: 'History' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public profileData = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId: string = req.params.id; 
+      const profileData: ProfileData = await this.userService.profileData(userId);
+
+      res.status(200).json({ data: profileData, message: 'Profile Data' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  
 }
 
 export default UsersController;

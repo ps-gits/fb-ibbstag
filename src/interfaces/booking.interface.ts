@@ -27,3 +27,16 @@ export interface Booking {
 export class Payment{
   public html: string;
 }
+
+
+
+export interface BookingHistory{
+  _id: string;
+  pnrcode:string;
+  name: string;
+  surname:string;
+  origin: string;
+  destination: string;
+  originDate: string;
+  destinationDate: string; 
+}

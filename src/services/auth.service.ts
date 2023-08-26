@@ -13,23 +13,22 @@ class AuthService {
 
   public async signup(userData: CreateUserDto): Promise<User> {
     if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
-    const findUser: User = await this.users.findOne({ Login: userData.Login });
-    if (findUser!=null) throw new HttpException(409, `This account already exists`); 
+    const findUser: User = await this.users.findOne({ Login: userData.Emails[0].Email });
+    if (findUser!=null) throw new HttpException(400, `This account already exists`); 
     var URL = API_URL+'NewCustomer';
     const requestData = {
       request: {
         Customer:{
-          CivilityCode: userData.CivilityCode,
+          CivilityCode:'Mr',//userData.CivilityCode,
           Emails: userData.Emails,
-          Firstname: userData.Firstname,
-          Middlename:userData.Middlename,
+          Firstname: userData.FirstName,
+          Middlename:userData.MiddleName,
           Surname: userData.Surname,
-          Phones: userData.Phones,
-          TypeCode: userData.TypeCode,
+          TypeCode: "EndCustomer",
           CultureName: "en-GB",
-          Currency: userData.Currency,
-          Login: userData.Login,
-          Ref:userData.Ref
+          Currency: "AED",
+          Login: userData.Emails[0].Email,
+          
         },
         Password: userData.Password,
         RequestInfo: {
@@ -39,11 +38,16 @@ class AuthService {
         Extensions: null
       }
     };
+   
     let res =  await axios.post(URL, requestData);
     let data = res.data;
     console.log(data);
-   // if (!data.Customer) throw new HttpException(409, `This account already exists. on ttl`);
     delete userData.Password;
+    userData.TypeCode = "EndCustomer";
+    userData.CultureName = "en-GB";
+    userData.Currency = "AED";
+    userData.Phones = [],
+    userData.Login = userData.Emails[0].Email;
     const createUserData: User = await this.users.create({ ...userData });
     return createUserData;
   }
@@ -52,13 +56,13 @@ class AuthService {
     if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
     var URL = API_URL+'LoadCustomer';
     const findUser: User = await this.users.findOne({ Login: userData.Login });
-    if (!findUser) throw new HttpException(409, `This email ${userData.Login} was not found`);
+    if (!findUser) throw new HttpException(400, `This email ${userData.Login} was not found`);
     
     const requestData = {
       request: {
         ByLoginAndPassword: {
           Login: userData.Login,
-          Password: userData.password
+          Password: userData.Password
         },
         RequestInfo: {
           AuthenticationKey: API_KEY,
@@ -66,11 +70,11 @@ class AuthService {
         }
       }
     }; 
-
+ 
     let res =  await axios.post(URL, requestData);
     let data = res.data;
     console.log(data);
-    if (!data.Customer) throw new HttpException(409, `Incorrect Id or password `);
+    if (!data.Customer) throw new HttpException(400, `Incorrect Id or password `);
       const tokenData = this.createToken(findUser);
       const cookie = this.createCookie(tokenData);
       return {cookie, findUser};
@@ -79,7 +83,7 @@ class AuthService {
   public async logout(userData: User): Promise<User> {
     if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
     const findUser: User = await this.users.findOne({ email: userData.email, password: userData.password });
-    if (!findUser) throw new HttpException(409, `This email ${userData.email} was not found`);
+    if (!findUser) throw new HttpException(400, `This email ${userData.email} was not found`);
     return findUser;
   }
 

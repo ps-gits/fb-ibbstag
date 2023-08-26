@@ -9,11 +9,11 @@ export class passengerDetailsDto {
   Firstname: string;
   @IsNotEmpty()
   @IsString()
-  Surname: string;
-
+  Surname: string; 
   Ref: string;
   RefClient:string;
   
+  CivilityCode:string; 
 }
 
 export class SpecialServicesDto {
@@ -67,7 +67,17 @@ export class CreateBookingDto {
   public MealsDetails:MealsDetails;
   @ArrayUnique()
   public EMDTicketFareOptions: EMDTicketFareOptions[];
+ // @ArrayUnique()
+  //public AncillaryData: AncillaryData[];
    
+}
+export class AncillaryData{
+  @IsString()
+  public AncillaryCode:String;
+  @IsString()
+  public RefPassenger:String;
+  @IsString()
+  public RefSegment:String;
 }
 export class EMDTicketFareOptions{
   @IsString()
@@ -274,6 +284,19 @@ export class paymentRequestDto{
 export class PaymentCheckDto{
   @IsString()
   public amount: string;
+  public sale_currency: string;
+  public hmac: string;
+  public 'payment-method':string;
+  public orderid:string;
+  public 'card-number': string;
+  public 'card-holder-name': string;
+  
 }
+
+export class HeadersDto{
+  public 'x-transaction-id': string;
+ 
+}
+
 
 

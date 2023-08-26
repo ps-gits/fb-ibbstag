@@ -1,0 +1,11 @@
+import { model, Schema, Document } from 'mongoose';
+import { CivilityDetails } from '@interfaces/cron.interface'; 
+ 
+const civilityDetailSchema: Schema = new Schema({
+    Code:{ type: String },
+    Label:{ type: String ,required: true},
+    ValueCodeProperties:{ type: String ,required: true},
+    Extensions:{ type: String ,required: true},
+}); 
+const civilityDetailModel = model<CivilityDetails & Document>('CivilityDetails', civilityDetailSchema); 
+export default civilityDetailModel;

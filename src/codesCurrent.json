@@ -879,7 +879,7 @@
             {
                 "name": "Switzerland",
                 "code": "CH",
-                "cpd_code":"109"
+                "cpd_code":"756"
             },
             {
                 "name": "Liechtenstein",
@@ -1357,7 +1357,7 @@
             {
                 "name": "European Union",
                 "code": "EU",
-                "cpd_code":""
+                "cpd_code":"978"
             },
             {
                 "name": "Åland Islands",
@@ -1412,7 +1412,7 @@
             {
                 "name": "Germany",
                 "code": "DE",
-                "cpd_code":""
+                "cpd_code":"978"
             },
             {
                 "name": "Greece",
@@ -1537,7 +1537,7 @@
             {
                 "name": "Vatican City",
                 "code": "VA",
-                "cpd_code":""
+                "cpd_code":"978"
             }
         ],
         "code": {
@@ -3018,12 +3018,12 @@
             {
                 "name": "Maldives",
                 "code": "MV",
-                "cpd_code":"623"
+                "cpd_code":"840"
             }
         ],
         "code": {
-            "alphabetic": "MVR",
-            "numeric": "462"
+            "alphabetic": "USD",
+            "numeric": "840"
         },
         "name": {
             "full": "Maldivian Rufiyaa",

@@ -32,9 +32,9 @@ class CommonController {
       const eligibleLocationData: EligibleOriginDestinations[] = await this.CommonService.getEligibleOriginDestinations(OriginDestinationData);
       
       const modifiedData = eligibleLocationData.map((item) => {
-        if (item.TargetDate !== null) {
-          const dateInMs = parseInt(item.TargetDate.substring(6, 19));
-          item.TargetDate = new Date(dateInMs).toISOString();
+        if (item.Date !== null) {
+          //const dateInMs = parseInt(item.TargetDate.substring(6, 19));
+          item.TargetDate = item.Date//new Date(dateInMs+18000000).toISOString();
           
         }
         return item;

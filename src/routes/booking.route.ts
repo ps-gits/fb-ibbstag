@@ -37,7 +37,7 @@ class BookingRoute implements Routes {
         this.router.post(`${this.path}prepareCancelBooking`,validationMiddleware(PrepareCancelBookingDto, 'body'), this.bookingController.prepareCancelBooking);
         this.router.post(`${this.path}exchangeCreateBooking`,validationMiddleware(CreateBookingExchangeDto, 'body'), this.bookingController.exchangeCreateBooking);
         this.router.post(`${this.path}paymentRequest`,validationMiddleware(paymentRequestDto, 'body'), this.bookingController.paymentRequest);
-        this.router.post(`${this.path}paymentCheck`,validationMiddleware(PaymentCheckDto, 'body'), this.bookingController.paymentCheck);
+        this.router.post(`${this.path}paymentCheck`, this.bookingController.paymentCheck);
        
       }
 } 

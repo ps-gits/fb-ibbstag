@@ -5,7 +5,7 @@ export class LoginDto {
   public Login: string;
 
   @IsString()
-  public password: string;
+  public Password: string;
 }
 
 class PhoneDTO {
@@ -25,67 +25,38 @@ export class CreateUserDto {
   
   @ArrayNotEmpty()
   @ArrayUnique()
-  public Emails: Array<string>;
-  
-  @ArrayNotEmpty()
-  @ArrayUnique()  
-  public Phones: Array<string>;
-  
-  @ArrayUnique()
-  public Addresses: Array<string>;
-  
-  @ArrayUnique()
-  public Documents: Array<string>;
-
-  @IsNotEmpty()
-  @IsString()
-  public CivilityCode: string;
-
-  @IsNotEmpty()
-  @IsString()
-  public Firstname: string;
+  public Emails: Email[];
   
   @IsNotEmpty()
   @IsString()
-  public Middlename: string;
+  public FirstName: string;
+   
+  @IsString()
+  public MiddleName: string;
   
   @IsNotEmpty()
   @IsString()
   public Surname: string;
- 
-  @IsNotEmpty()
-  @IsString()
-  public TypeCode: string;
-
-  @IsNotEmpty()
-  @IsString()
-  public CultureName: string;
-
-  @IsNotEmpty()
-  @IsString()
-  public Currency: string;
-
-  @IsNotEmpty()
-  @IsString()
-  public Login: string;
-
-  @IsNotEmpty()
-  @IsString()
-  public BirthDate: string;
-  
+   
   @IsNotEmpty()
   @IsString()
   public Password: string;
+ 
+  
+  @IsNotEmpty()
+  @IsString()
+  public CivilityCode: string;
+  TypeCode: string;
+  CultureName: string;
+  Currency: string;
+  Phones: any[];
+  Login: any;
+  
+}
 
-  @IsNotEmpty()
+export class Email{
   @IsString()
-  public CompanyName: string; 
-  
-  @IsNotEmpty()
-  @IsString()
-  public Ref: string; 
-  
-  
+  public Email:String;
 }
 
 
@@ -94,3 +65,35 @@ export class ForgotPasswordDto {
   public EmailAddress: string; 
 }
 
+export class UpdateUserDto {
+  
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  public Emails: Email[];
+  
+  @IsNotEmpty()
+  @IsString()
+  public FirstName: string;
+   
+  @IsString()
+  public MiddleName: string;
+  
+  @IsNotEmpty()
+  @IsString()
+  public Surname: string;
+   
+  @IsNotEmpty()
+  @IsString()
+  public Password: string;
+  
+  @IsNotEmpty()
+  @IsString()
+  public CivilityCode: string;
+  TypeCode: string;
+  CultureName: string;
+  Currency: string;
+  Phones: any[];
+  Login: any;
+  Members: any[];
+ 
+}
