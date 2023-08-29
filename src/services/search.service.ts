@@ -134,8 +134,8 @@ class SearchService {
         opulence: [],
       }; 
 
-      var  OriginCode      =  searchData.OriginDestinations[0].OriginCode;
-      var  DestinationCode =  searchData.OriginDestinations[0].DestinationCode;
+      var OriginCode      =  searchData.OriginDestinations[0].OriginCode;
+      var DestinationCode =  searchData.OriginDestinations[0].DestinationCode;
       var LocOrgin =  await this.location.find({Code:OriginCode});
       for (const  loc1 in LocOrgin) {
         var originName =  LocOrgin[loc1].name;
@@ -155,14 +155,39 @@ class SearchService {
             let oriIncre = 0;
             let desIncre = 0;
              
+            let  ETTicketFares   = res.data.FareInfo.ETTicketFares;
+            let  RefItinerary    = "";
+            const refWebClassDict = {};
+            const BagAllowances = {};
+            ETTicketFares.forEach((ticketFare,index) => {
+              const originDestFares = ticketFare.OriginDestinationFares;
+              const refWebClasses = originDestFares.map(fare => fare.RefWebClass);
+              const areAllSame = refWebClasses.every(refWebClass => refWebClass === refWebClasses[0]);
+              if(areAllSame){
+                refWebClassDict[refWebClasses[0]] = ticketFare.RefItinerary;
+                BagAllowances[0] = originDestFares.CouponFares[0].BagAllowances[0]; 
+              }
+            });
+            for (const key in refWebClassDict) {
+                if (refWebClassDict.hasOwnProperty(key)) {
+                    const ref = refWebClassDict[key];
+                    const itinerary = Itineraries.find(item => item.Ref === ref);
+                    if (itinerary) {
+                      refWebClassDict[key] = {
+                            "SaleCurrencyAmount": itinerary.SaleCurrencyAmount,
+                            "RefItinerary": itinerary.Ref
+                        };
+                    }
+                }
+            }
             for (const seg of Segments) {
               //for (const OriKey in OriginDestinationsRes) {
                 if (seg.OriginCode === OriginDestinationsRes[0].OriginCode &&
                     seg.DestinationCode === OriginDestinationsRes[0].DestinationCode &&
                     oriIncre === 0) {
                     oriIncre += 1;
-                    var  DepartureDate   = seg.FlightInfo.DepartureDate;
-                    var  ArrivalDate     = seg.FlightInfo.ArrivalDate;
+                    var DepartureDate   = seg.FlightInfo.DepartureDate;
+                    var ArrivalDate     = seg.FlightInfo.ArrivalDate;
                     var destinationArrivalTime = formattedTime(ArrivalDate); 
                     var destinationArrivalDate = localeDateString(ArrivalDate);
                     var orginDepartureTime     = formattedTime(DepartureDate);
@@ -174,13 +199,7 @@ class SearchService {
                     originCity:originCity,
                     luxuryPickup: true,   // either field will not return in response
                     loungeAccess: true,   // either field will not return in response
-                    BagAllowances: [
-                      {
-                        Quantity: Quantity,
-                        WeightMeasureQualifier: WeightMeasureQualifier,
-                        Weight: Weight
-                      }
-                    ],
+                    BagAllowances:BagAllowances,
                     destinationName: destinationName,
                     destinationCity: destinationCity,
                     destinationArrivalDate: destinationArrivalDate,
@@ -194,28 +213,22 @@ class SearchService {
                   if (seg.OriginCode === OriginDestinationsRes[1].OriginCode &&
                       seg.DestinationCode === OriginDestinationsRes[1].DestinationCode && desIncre === 0) {
                     desIncre += 1; 
-                    var  DepartureDate   = seg.FlightInfo.DepartureDate;
-                    var  ArrivalDate     = seg.FlightInfo.ArrivalDate;
+                    var DepartureDate          = seg.FlightInfo.DepartureDate;
+                    var ArrivalDate            = seg.FlightInfo.ArrivalDate;
                     var destinationArrivalTime = formattedTime(ArrivalDate ); 
                     var destinationArrivalDate = localeDateString(ArrivalDate);
                     var orginDepartureTime     = formattedTime(DepartureDate);
-                    var orginDepartureDate = localeDateString(DepartureDate);
+                    var orginDepartureDate     = localeDateString(DepartureDate);
                     const faireFmailiesDestinationObj = {
                       orginDepartureDate: orginDepartureDate,
                       orginDepartureTime: orginDepartureTime,
-                      originName: originName,
-                      originCity: originCity,
+                      originName: destinationName,
+                      originCity: destinationCity,
                       luxuryPickup: true,
                       loungeAccess: true,
-                      BagAllowances: [
-                        {
-                          Quantity: Quantity,
-                          WeightMeasureQualifier: WeightMeasureQualifier,
-                          Weight: Weight
-                        }
-                      ],
-                      destinationName: destinationName,
-                      destinationCity: destinationCity,
+                      BagAllowances:BagAllowances,
+                      destinationName: originName,
+                      destinationCity: originCity,
                       destinationArrivalDate: destinationArrivalDate ,
                       destinationArrivalTime: destinationArrivalTime,
                     };
@@ -238,35 +251,7 @@ class SearchService {
               var Otr  = toISOString(OriginDestinationsRes[0].TargetDate);
               var Dtr  =  toISOString(OriginDestinationsRes[1].TargetDate); 
             } 
-            let  ETTicketFares   = res.data.FareInfo.ETTicketFares;
-            var  Quantity        = res.data.FareInfo.ETTicketFares[0].OriginDestinationFares[0].CouponFares[0].BagAllowances[0].Quantity;
-            var  WeightMeasureQualifier = res.data.FareInfo.ETTicketFares[0].OriginDestinationFares[0].CouponFares[0].BagAllowances[0].WeightMeasureQualifier;
-            var  Weight          = res.data.FareInfo.ETTicketFares[0].OriginDestinationFares[0].CouponFares[0].BagAllowances[0].Weight;
-            let  RefItinerary    = '';
-            
-            const refWebClassDict = {};
-              ETTicketFares.forEach((ticketFare,index) => {
-                const originDestFares = ticketFare.OriginDestinationFares;
-                const refWebClasses = originDestFares.map(fare => fare.RefWebClass);
-                const areAllSame = refWebClasses.every(refWebClass => refWebClass === refWebClasses[0]);
-                if(areAllSame){
-                  refWebClassDict[refWebClasses[0]] = ticketFare.RefItinerary;
-                }
-              });
-              console.log('refWebClassDict',refWebClassDict);
-              for (const key in refWebClassDict) {
-                  if (refWebClassDict.hasOwnProperty(key)) {
-                      const ref = refWebClassDict[key];
-                      const itinerary = Itineraries.find(item => item.Ref === ref);
-                      if (itinerary) {
-                        refWebClassDict[key] = {
-                              "SaleCurrencyAmount": itinerary.SaleCurrencyAmount,
-                              "RefItinerary": itinerary.Ref
-                          };
-                      }
-                  }
-              }
-              console.log('refWebClassDict_1',refWebClassDict);
+             
               if(searchData.OriginDestinations.length > 1){
                 if((res.data.FareInfo.Itineraries.length > 8 && searchData.DateFlexible==true) || (res.data.FareInfo.Itineraries.length > 2 && searchData.DateFlexible==false)){
                   let Itinerariesdelight =  refWebClassDict[3];
@@ -727,6 +712,32 @@ class SearchService {
           let desIncre = 0;
           var  OriginCode      = OriginDestinationsRes[0].OriginCode;
           var  DestinationCode = OriginDestinationsRes[0].DestinationCode;
+          let  ETTicketFares   = res.data.FareInfo.ETTicketFares;
+          let  RefItinerary    = "";
+          const refWebClassDict = {};
+          const BagAllowances = {};
+          ETTicketFares.forEach((ticketFare,index) => {
+            const originDestFares = ticketFare.OriginDestinationFares;
+            const refWebClasses = originDestFares.map(fare => fare.RefWebClass);
+            const areAllSame = refWebClasses.every(refWebClass => refWebClass === refWebClasses[0]);
+            if(areAllSame){
+              refWebClassDict[refWebClasses[0]] = ticketFare.RefItinerary;
+              BagAllowances[0] = originDestFares.CouponFares[0].BagAllowances[0]; 
+            }
+          });
+          for (const key in refWebClassDict) {
+              if (refWebClassDict.hasOwnProperty(key)) {
+                  const ref = refWebClassDict[key];
+                  const itinerary = Itineraries.find(item => item.Ref === ref);
+                  if (itinerary) {
+                    refWebClassDict[key] = {
+                          "SaleCurrencyAmount": itinerary.SaleCurrencyAmount,
+                          "RefItinerary": itinerary.Ref
+                      };
+                  }
+              }
+          }
+
           for (const seg of Segments) {
             //for (const OriKey in OriginDestinationsRes) {
               if (seg.OriginCode === OriginDestinationsRes[0].OriginCode &&
@@ -746,13 +757,7 @@ class SearchService {
                   originCity:originCity, 
                   luxuryPickup: true,   // either field will not return in response
                   loungeAccess: true,   // either field will not return in response
-                  BagAllowances: [
-                    {
-                      Quantity: Quantity,
-                      WeightMeasureQualifier: WeightMeasureQualifier,
-                      Weight: Weight
-                    }
-                  ],
+                  BagAllowances: BagAllowances,
                   destinationName: destinationName,
                   destinationCity: destinationCity,
                   destinationArrivalDate: destinationArrivalDate,
@@ -774,19 +779,13 @@ class SearchService {
                 const faireFmailiesDestinationObj = {
                   orginDepartureDate: orginDepartureDate,
                   orginDepartureTime: orginDepartureTime,
-                  originName: originName,
-                  originCity: originCity,
+                  originName: destinationName,
+                  originCity: destinationCity,
                   luxuryPickup: true,
                   loungeAccess: true,
-                  BagAllowances: [
-                    {
-                      Quantity: Quantity,
-                      WeightMeasureQualifier: WeightMeasureQualifier,
-                      Weight: Weight
-                    }
-                  ],
-                  destinationName: destinationName,
-                  destinationCity: destinationCity,
+                  BagAllowances:BagAllowances,
+                  destinationName: originName,
+                  destinationCity: originCity,
                   destinationArrivalDate: destinationArrivalDate ,
                   destinationArrivalTime: destinationArrivalTime,
                 };
@@ -809,32 +808,8 @@ class SearchService {
             var Otr = toISOString(OriginDestinationsRes[0].TargetDate);
             var Dtr =  toISOString(OriginDestinationsRes[1].TargetDate); 
           } 
-          let  ETTicketFares   = res.data.FareInfo.ETTicketFares;
-          var  Quantity        = ETTicketFares[0].OriginDestinationFares[0].CouponFares[0].BagAllowances[0].Quantity;
-          var  WeightMeasureQualifier = ETTicketFares[0].OriginDestinationFares[0].CouponFares[0].BagAllowances[0].WeightMeasureQualifier;
-          var  Weight          = ETTicketFares[0].OriginDestinationFares[0].CouponFares[0].BagAllowances[0].Weight;
-          let  RefItinerary    = "";
-          const refWebClassDict = {};
-          ETTicketFares.forEach((ticketFare,index) => {
-              const originDestFares = ticketFare.OriginDestinationFares;
-              const refWebClasses = originDestFares.map(fare => fare.RefWebClass);
-              const areAllSame = refWebClasses.every(refWebClass => refWebClass === refWebClasses[0]);
-              if(areAllSame){
-                refWebClassDict[refWebClasses[0]] = ticketFare.RefItinerary;
-              }
-            });
-            for (const key in refWebClassDict) {
-              if (refWebClassDict.hasOwnProperty(key)) {
-                  const ref = refWebClassDict[key];
-                  const itinerary = Itineraries.find(item => item.Ref === ref);
-                  if (itinerary) {
-                    refWebClassDict[key] = {
-                          "SaleCurrencyAmount": itinerary.SaleCurrencyAmount,
-                          "RefItinerary": itinerary.Ref
-                      };
-                  }
-              }
-          }  
+         
+            
           const Itinerariesdelight =  refWebClassDict[3];
           RefItinerary         = Itinerariesdelight.RefItinerary;
           var  BaseAmount      = Itinerariesdelight.SaleCurrencyAmount.BaseAmount;

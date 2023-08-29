@@ -53,161 +53,37 @@ class BookingService {
   } 
   public async modifyBooking(modifybookingData: ModifyBookingDto): Promise<Booking> {
     if (isEmpty(modifybookingData)) throw new HttpException(400, 'booking request Data is empty'); 
-    var URL = API_URL+'ModifyBooking?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
-    try {
-      const result = await this.bookingRequest(modifybookingData,'ModifyBooking');
-      const requestData = {
-        request: {   
-          Passengers: result.Passengers,
-          UniqueID: {
-            TypeCode: "PnrCode",
-            ID:modifybookingData.PnrCode
-          }, 
-          Verification:{
-            PassengerName: modifybookingData.PassengerName
-          },
-          SpecialServices: result.SpecialServices,
-          RemovedSpecialServices:[],
-          RemovedEMDTicketFares:[],
-          EMDTicketFares:result.FareInfo.EMDTicketFares,
-          RequestInfo: {
-            AuthenticationKey: API_KEY,
-            CultureName: 'en-GB'
-          },
-          Extensions: null
-        }
-      };
-      let res =  await axios.post(URL, requestData);
-      let dataModify = {
-        Passengers: {},
-        Amount:{},
-        OriginDestination: [],
-        PnrInformation:{},
-        RefETTicketFare:[],
-        PassengersDetails:[],
-        SeatMaps:[]
-      };
-      if(res.data.Booking != null){
-        let response  = res.data;
-        let  FareInfo = response.Booking.FareInfo;
-        var  SaleCurrencyAmountToPay = FareInfo.SaleCurrencyAmountToPay;
-        var  Segments         = response.Booking.Segments;
-        var  ETTicketFares    = FareInfo.ETTicketFares;
-        var  SaleCurrencyCode = FareInfo.SaleCurrencyCode;
-        var  RefETTicketFare  = response.Booking.TicketInfo.ETTickets;
-        var  SeatMaps         = response.Booking.SeatMaps;
-        dataModify.SeatMaps   = SeatMaps;
-        if(RefETTicketFare.length==0){
-          var  RefETTicketFare = response.Booking.MiscInfo.ExchangeableOriginDestinations[0].ETTicketFareTargets;
-        }
-        
-        var  PnrInformation   = response.Booking.PnrInformation;
-        let  PassengerQuantityChild  = 0;
-        let  PassengerQuantityAdult  = 0;
-        var  PassengersA      = response.Booking.Passengers;
-        var SpecialServicesA   =  response.Booking.SpecialServices;
-        
-        for (const  pass in PassengersA) {
-          let special = {
-            fields:[]
-          };
-          for (const  key1 in SpecialServicesA) { 
-            if(SpecialServicesA[key1].RefPassenger==PassengersA[pass].Ref)
-            {  
-              var Label = await this.specialServiceCode.find({Code:SpecialServicesA[key1].Code});
-              for (const  lab in Label) {
-                var LabelName =  Label[lab].Label;
-              }
-              let myObj = {
-                Code: SpecialServicesA[key1].Code,
-                Text:SpecialServicesA[key1].Text,
-                Data:SpecialServicesA[key1].Data,
-                Label: LabelName
-              };
-              special.fields.push(myObj);
-            }
-          } 
-          dataModify.PassengersDetails.push(special);
-        }
-        for (const  pas in PassengersA) {
-          if(PassengersA[pas].PassengerTypeCode=='AD'){
-            PassengerQuantityAdult += PassengersA[pas].PassengerQuantity;
+    const BookingData = new Promise(async (resolve, reject) => {
+      try {
+        const result = await this.bookingRequest(modifybookingData,'ModifyBooking');
+        const requestData = {
+          request: {   
+            Passengers: result.Passengers,
+            UniqueID: {
+              TypeCode: "PnrCode",
+              ID:modifybookingData.PnrCode
+            }, 
+            Verification:{
+              PassengerName: modifybookingData.PassengerName
+            },
+            SpecialServices: result.SpecialServices,
+            RemovedSpecialServices:[],
+            RemovedEMDTicketFares:[],
+            EMDTicketFares:result.FareInfo.EMDTicketFares,
+            RequestInfo: {
+              AuthenticationKey: API_KEY,
+              CultureName: 'en-GB'
+            },
+            Extensions: null
           }
-          if(PassengersA[pas].PassengerTypeCode=='CHD'){
-            PassengerQuantityChild += PassengersA[pas].PassengerQuantity;
-          }
-          
-          let Passengers =  {
-            "Adult": PassengerQuantityAdult,
-            "Children": PassengerQuantityChild
-          };
-          dataModify.Passengers = Passengers;
-        }  
-          
-        let Amount  =  {
-          "DiscountAmount":0,//SaleCurrencyAmountToPay.DiscountAmount,
-          "BaseAmount": 0,//SaleCurrencyAmountToPay.BaseAmount,
-          "TaxAmount": 0,//SaleCurrencyAmountToPay.TaxAmount,
-          "TotalAmount": SaleCurrencyAmountToPay.TotalAmount,
-          "MilesAmount": SaleCurrencyAmountToPay.MilesAmount,
-          "SaleCurrencyCode":SaleCurrencyCode,
-          "Extensions": null
         };
-          dataModify.Amount = Amount; 
-          dataModify.RefETTicketFare = RefETTicketFare;
-          for (const  seg in Segments) {
-            if(Segments[seg].BookingClass.StatusCode!=='XX')
-            {
-              console.log(ETTicketFares);
-              let ct: number = 0;
-              console.log(ETTicketFares[ct].OriginDestinationFares[0].CouponFares[0]);
-              let BagAllowancesArr = ETTicketFares[ct].OriginDestinationFares[0].CouponFares[0].BagAllowances[0];
-              console.log(BagAllowancesArr);
-              let BagAllowances  =  {
-                "Quantity": BagAllowancesArr.Quantity,
-                "WeightMeasureQualifier": BagAllowancesArr.WeightMeasureQualifier,
-                "Weight":BagAllowancesArr.Weight,
-                "Extensions": BagAllowancesArr.Extensions,
-                "CarryOn": BagAllowancesArr.CarryOn
-              };
-
-              var OriginCode1 = await this.location.find({Code:Segments[seg].OriginCode});
-              for (const  loc2 in OriginCode1) {
-                var OriginCity =  OriginCode1[loc2].city;
-              }
-              var DestinationCode1 = await this.location.find({Code:Segments[seg].DestinationCode});
-              for (const  loc2 in DestinationCode1) {
-                var DestinationCity =  DestinationCode1[loc2].city;
-              }
-              let OriginDestination =     {
-                "OriginCode": Segments[seg].OriginCode,
-                "OriginCity": OriginCity,
-                "DestinationCode": Segments[seg].DestinationCode,
-                "DestinationCity":DestinationCity,
-                "DepartureDate":  localeDateString(Segments[seg].FlightInfo.ArrivalDate),
-                "OrginDepartureTime":formattedTime(Segments[seg].FlightInfo.DepartureDate),
-                "DestinationArrivalTime":formattedTime(Segments[seg].FlightInfo.ArrivalDate),
-                "ArrivalDate": localeDateString(Segments[seg].FlightInfo.DepartureDate),
-                "OriginAirportTerminal": Segments[seg].FlightInfo.OriginAirportTerminal,
-                "DestinationAirportTerminal": Segments[seg].FlightInfo.DestinationAirportTerminal,
-                "BagAllowances":  BagAllowances
-              };
-              dataModify.OriginDestination.push(OriginDestination);
-              dataModify.PnrInformation = PnrInformation;
-            }  
-          }
-          
-      }else{
-        if (res.data.ResponseInfo.Error.Message) {
-          throw new HttpException(400, res.data);
-        }
+        let dataModify = this.Responce(requestData,'ModifyBooking');
+        resolve(dataModify);
+      } catch (error) {
+        reject(error);
       }
-      return dataModify;
-    } catch (error) {
-      if (error) {
-        throw new HttpException(400, error.message);
-      }
-    }
+    });
+    return  BookingData;
   }
   public async searchBooking(serachbookingData: SearchBookingDto): Promise<Booking> {
     if (isEmpty(serachbookingData)) throw new HttpException(400, 'Search booking request Data is empty'); 
@@ -380,7 +256,7 @@ class BookingService {
     if (isEmpty(loadBookingData)) throw new HttpException(400, 'booking Data is empty');
       const BookingData = new Promise(async (resolve, reject) => {
       try {
-           const requestData = {
+          const requestData = {
               request: {
                 UniqueID:{
                   TypeCode: loadBookingData.TypeCode,
@@ -398,7 +274,7 @@ class BookingService {
                   CultureName: 'en-GB'
                 },
               }
-            };
+          };
           let data = this.Responce(requestData,'LoadBooking');
           resolve(data);
       } catch (error) {
@@ -861,139 +737,49 @@ class BookingService {
   
   public async exchangeCreateBooking(bookingData: CreateBookingExchangeDto): Promise<Booking> {
     if (isEmpty(bookingData)) throw new HttpException(400, 'booking request Data is empty'); 
-    var URL = API_URL+'Exchange?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
-    try {
-      const result = await this.bookingRequest(bookingData,'Exchange');
-      let RefETTicketFareAr = bookingData.RefETTicketFare
-      let RefETTicketFare = [];
-      for (const  key in RefETTicketFareAr) { 
-
-        const newObjs = {
-            RefETTicketFare: RefETTicketFareAr[key].RefETTicketFare,
-            Extensions: null 
+    const BookingData = new Promise(async (resolve, reject) => {
+      try {
+        const result = await this.bookingRequest(bookingData,'Exchange');
+        let RefETTicketFareAr = bookingData.RefETTicketFare
+        let RefETTicketFare = [];
+        for (const  key in RefETTicketFareAr) { 
+          const newObjs = {
+              RefETTicketFare: RefETTicketFareAr[key].RefETTicketFare,
+              Extensions: null 
+          };
+          RefETTicketFare.push(newObjs);
+        }
+        const requestData = {
+          request: { 
+            UniqueID:{
+              TypeCode: "PnrCode",
+              ID:bookingData.PnrCode
+            },
+            Verification: { 
+              PassengerName:bookingData.PassangerLastname
+            },
+            TicketFaresToExchange:RefETTicketFare,
+            Offer: {
+                      RefItinerary: bookingData.RefItinerary,
+                      Ref: bookingData.Ref
+                    },
+            SpecialServices: result.SpecialServices,
+            FareInfo:result.FareInfo,
+            //Passengers:result.Passengers,
+            RequestInfo: {
+              AuthenticationKey: API_KEY,
+              CultureName: 'en-GB'
+            },
+            Extensions: null
+          }
         };
-        RefETTicketFare.push(newObjs);
+        let dataModify = this.Responce(requestData,'Exchange');
+        resolve(dataModify);
+      } catch (error) {
+        reject(error);
       }
-      const requestData = {
-        request: { 
-          UniqueID:{
-            TypeCode: "PnrCode",
-            ID:bookingData.PnrCode
-          },
-          Verification: { 
-            PassengerName:bookingData.PassangerLastname
-          },
-          TicketFaresToExchange:RefETTicketFare,
-          Offer: {
-                    RefItinerary: bookingData.RefItinerary,
-                    Ref: bookingData.Ref
-                  },
-          SpecialServices: result.SpecialServices,
-          FareInfo:result.FareInfo,
-          //Passengers:result.Passengers,
-          RequestInfo: {
-            AuthenticationKey: API_KEY,
-            CultureName: 'en-GB'
-          },
-          Extensions: null
-        }
-      };
-      let res =  await axios.post(URL, requestData); 
-      let data = {
-        Passengers: {},
-        Amount:{},
-        OriginDestination: [],
-        PnrInformation:{}
-      };
-      if(res.data.Booking != null){
-        let response  = res.data;
-        let FareInfo  = response.Booking.FareInfo;
-        var SaleCurrencyAmountToPay  = FareInfo.SaleCurrencyAmountToPay;
-        var Segments                 = response.Booking.Segments;
-        var ETTicketFares            = FareInfo.ETTicketFares;
-        var PassengersA              = response.Booking.Passengers;
-        var PnrInformation           = response.Booking.PnrInformation;
-        var SaleCurrencyCode         = FareInfo.SaleCurrencyCode;
-        let PassengerQuantityChild   = 0;
-        let PassengerQuantityAdult   = 0;
-        for (const  pas in PassengersA) {
-          if(PassengersA[pas].PassengerTypeCode=='AD'){
-            PassengerQuantityAdult += PassengersA[pas].PassengerQuantity;
-          }
-          if(PassengersA[pas].PassengerTypeCode=='CHD'){
-            PassengerQuantityChild += PassengersA[pas].PassengerQuantity;
-          }
-          
-          let Passengers =  {
-            "Adult": PassengerQuantityAdult,
-            "Children": PassengerQuantityChild
-          };
-          data.Passengers = Passengers;
-        }  
-          
-          let Amount  =  {
-            "DiscountAmount":0,//SaleCurrencyAmountToPay.DiscountAmount,
-            "BaseAmount": 0,//SaleCurrencyAmountToPay.BaseAmount,
-            "TaxAmount": 0,//SaleCurrencyAmountToPay.TaxAmount,
-            "TotalAmount": SaleCurrencyAmountToPay.TotalAmount,
-            "MilesAmount": SaleCurrencyAmountToPay.MilesAmount,
-            "SaleCurrencyCode":SaleCurrencyCode,
-            "Extensions": null
-          };
-          data.Amount = Amount; 
-          for (const  seg in Segments) {
-            if(Segments[seg].BookingClass.StatusCode!=='XX')
-            {
-              let ct: number = 0;
-              console.log(ETTicketFares);
-              console.log(ETTicketFares[ct].OriginDestinationFares[0].CouponFares[0]);
-              let BagAllowancesArr = ETTicketFares[ct].OriginDestinationFares[0].CouponFares[0].BagAllowances[0];
-              console.log(BagAllowancesArr);
-              let BagAllowances  =  {
-                "Quantity": BagAllowancesArr.Quantity,
-                "WeightMeasureQualifier": BagAllowancesArr.WeightMeasureQualifier,
-                "Weight":BagAllowancesArr.Weight,
-                "Extensions": BagAllowancesArr.Extensions,
-                "CarryOn": BagAllowancesArr.CarryOn
-              };
-
-              var OriginCode1 = await this.location.find({Code:Segments[seg].OriginCode});
-              for (const  loc2 in OriginCode1) {
-                var OriginCity =  OriginCode1[loc2].city;
-              }
-              var DestinationCode1 = await this.location.find({Code:Segments[seg].DestinationCode});
-              for (const  loc2 in DestinationCode1) {
-                var DestinationCity =  DestinationCode1[loc2].city;
-              }
-              let OriginDestination =     {
-                "OriginCode": Segments[seg].OriginCode,
-                "OriginCity": OriginCity,
-                "DestinationCode": Segments[seg].DestinationCode,
-                "DestinationCity":DestinationCity,
-                "DepartureDate": localeDateString(Segments[seg].FlightInfo.ArrivalDate),
-                "OrginDepartureTime":formattedTime(Segments[seg].FlightInfo.DepartureDate),
-                "DestinationArrivalTime":formattedTime(Segments[seg].FlightInfo.ArrivalDate),
-                "ArrivalDate":  localeDateString(Segments[seg].FlightInfo.DepartureDate),
-                "OriginAirportTerminal": Segments[seg].FlightInfo.OriginAirportTerminal,
-                "DestinationAirportTerminal": Segments[seg].FlightInfo.DestinationAirportTerminal,
-                "BagAllowances":  BagAllowances
-              };
-              data.OriginDestination.push(OriginDestination);
-              data.PnrInformation = PnrInformation;
-            }
-          }
-          
-      }else{
-        if (res.data.ResponseInfo.Error.Message) { 
-          throw new HttpException(400,res.data.ResponseInfo.Error.Message);
-        }
-      }
-      return data;
-    } catch (error) {
-      if (error) {
-        throw new HttpException(400, error.message);
-      }
-    }
+    });
+    return  BookingData;
   } 
   public async paymentRequest(paymentRequestData: paymentRequestDto): Promise<Payment> {
     if (isEmpty(paymentRequestData)) throw new HttpException(400, 'Payment request Data is empty'); 
@@ -1585,6 +1371,8 @@ class BookingService {
   async Responce(requestData: any,method:any): Promise<any> {
     var URL = API_URL+method+'?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
     let res =  await axios.post(URL, requestData);
+
+    return res.data;
     let dataModify = {
       PassengersDetails: [],
       Passengers: {},
@@ -1596,9 +1384,9 @@ class BookingService {
       FareRules:{}
     };
     if(res.data.Booking != null){
-        let response  = res.data;
-        var  SpecialServices   =  res.data.Booking.SpecialServices;
-        var  Passengers        = res.data.Booking.Passengers; 
+        let response  = res.data.Booking;
+        var  SpecialServices   = response.SpecialServices;
+        var  Passengers        = response.Passengers; 
         for (const  pass in Passengers) {
           let special = {
             fields:[]
@@ -1621,35 +1409,54 @@ class BookingService {
           } 
           dataModify.PassengersDetails.push(special);
         }
-
-        var  SaleCurrencyAmountTotal = response.Booking.FareInfo.SaleCurrencyAmountTotal;
-        var  Segments         = response.Booking.Segments;
-        var  ETTicketFares    = response.Booking.FareInfo.ETTicketFares;
-        var  EMDTicketFares    = response.Booking.FareInfo.EMDTicketFares;
-        var  RefETTicketFare  = response.Booking.TicketInfo.ETTickets;
-        var  SeatMaps         = response.Booking.SeatMaps;
+        if(method=='Exchange' || method=='ModifyBooking'){
+          var  SaleCurrencyAmountTotal = response.FareInfo.SaleCurrencyAmountToPay;
+        }else{
+          var  SaleCurrencyAmountTotal = response.FareInfo.SaleCurrencyAmountTotal;
+        }
+        var  Segments         = response.Segments;
+        var  ETTicketFares    = response.FareInfo.ETTicketFares;
+        var  EMDTicketFares   = response.FareInfo.EMDTicketFares;
+        var  RefETTicketFare  = response.TicketInfo.ETTickets;
+        var  SeatMaps         = response.SeatMaps;
+        var  FareRules         = response.FareInfo.FareRules;
         dataModify.SeatMaps   = SeatMaps;
-        if(method!='Cancel'){
+
+        if(method!='Cancel' && FareRules.length > 0){
           const parentArray = [{
-            Text: response.Booking.FareInfo.FareRules[0].FareConditionText.Text,
-            Value: response.Booking.FareInfo.FareRules[0].FareConditionText.Value,
-            Children: parseChildren(response.Booking.FareInfo.FareRules[0].FareConditionText.Children),
+            Text: FareRules[0].FareConditionText.Text,
+            Value: FareRules[0].FareConditionText.Value,
+            Children: parseChildren(FareRules[0].FareConditionText.Children),
             Extensions: null
           }];
 
           dataModify.FareRules   =  parentArray;
+
+          const bagAllowances = await FareRules.map(fareRule => {
+            const bagAllowance = fareRule.FareConditionText.Children.find(child => child.Text === "Bag allowance");
+              return bagAllowance ? {
+                  Text: bagAllowance.Text,
+                  Value: bagAllowance.Value,
+                  Children: bagAllowance.Children
+              } : null;
+          });
+          var Weight = '';
+          if (bagAllowances[0]) {
+            var Weight = bagAllowances[0].Value;
+          } 
         }
         const totalSeatAmountSum = EMDTicketFares
           .filter(item => item.AssociatedSpecialServiceCode === "SEAT")
           .map(item => item.SaleCurrencyAmount.TotalAmount)
           .reduce((sum, amount) => sum + amount, 0);
 
-         
+        
+        
         if(RefETTicketFare.length==0){
-          var  RefETTicketFare = response.Booking.MiscInfo.ExchangeableOriginDestinations[0].ETTicketFareTargets;
+          var  RefETTicketFare = response.MiscInfo.ExchangeableOriginDestinations[0].ETTicketFareTargets;
         }
-        var  PassengersA      = response.Booking.Passengers;
-        var  PnrInformation   = response.Booking.PnrInformation;
+        var  PassengersA      = response.Passengers;
+        var  PnrInformation   = response.PnrInformation;
         let  PassengerQuantityChild  = 0;
         let  PassengerQuantityAdult  = 0;
         for (const  pas in PassengersA) {
@@ -1693,12 +1500,13 @@ class BookingService {
                 var Luxury = true;
                 var Lounge =true;
               }
+             
               let ct: number = 0;
               let BagAllowancesArr = ETTicketFares[ct].OriginDestinationFares[0].CouponFares[0].BagAllowances[0];
               let BagAllowances  =  {
                 "Quantity": BagAllowancesArr.Quantity,
                 "WeightMeasureQualifier": BagAllowancesArr.WeightMeasureQualifier,
-                "Weight":BagAllowancesArr.Weight,
+                "Weight":BagAllowancesArr.Weight+' '+BagAllowancesArr.WeightMeasureQualifier,
                 "Extensions": BagAllowancesArr.Extensions,
                 "CarryOn": BagAllowancesArr.CarryOn
               };
@@ -1706,20 +1514,24 @@ class BookingService {
               var OriginCode1 = await this.location.find({Code:Segments[seg].OriginCode});
               for (const  loc2 in OriginCode1) {
                 var OriginCity =  OriginCode1[loc2].city;
+                var OriginName =  OriginCode1[loc2].name;
               }
               var DestinationCode1 = await this.location.find({Code:Segments[seg].DestinationCode});
               for (const  loc2 in DestinationCode1) {
                 var DestinationCity =  DestinationCode1[loc2].city;
+                var DestinationName =  DestinationCode1[loc2].name;
               }
               let OriginDestination =     {
                 "OriginCode": Segments[seg].OriginCode,
                 "OriginCity": OriginCity,
+                "OriginName": OriginName,
                 "DestinationCode": Segments[seg].DestinationCode,
                 "DestinationCity":DestinationCity,
-                "DepartureDate": localeDateString(Segments[seg].FlightInfo.ArrivalDate),
+                "DestinationName":DestinationName,
+                "DepartureDate": localeDateString(Segments[seg].FlightInfo.DepartureDate),
                 "OrginDepartureTime":formattedTime(Segments[seg].FlightInfo.DepartureDate),
                 "DestinationArrivalTime":formattedTime(Segments[seg].FlightInfo.ArrivalDate),
-                "ArrivalDate": localeDateString(Segments[seg].FlightInfo.DepartureDate),
+                "ArrivalDate": localeDateString(Segments[seg].FlightInfo.ArrivalDate),
                 "OriginAirportTerminal": Segments[seg].FlightInfo.OriginAirportTerminal,
                 "DestinationAirportTerminal": Segments[seg].FlightInfo.DestinationAirportTerminal,
                 "BagAllowances":  BagAllowances,
@@ -1756,7 +1568,5 @@ class BookingService {
     }
     return dataModify;
   }
-  
-  
 }
 export default BookingService;
