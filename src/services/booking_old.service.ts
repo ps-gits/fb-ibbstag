@@ -43,7 +43,7 @@ class BookingService {
             Extensions: null
           }
           };
-          let dataModify : Booking = await this.Responce(requestData,'CreateBooking');
+          let dataModify = this.Responce(requestData,'CreateBooking');
           resolve(dataModify);
       } catch (error) {
         reject(error);
@@ -77,7 +77,7 @@ class BookingService {
             Extensions: null
           }
         };
-        let dataModify : Booking = await this.Responce(requestData,'ModifyBooking');
+        let dataModify = this.Responce(requestData,'ModifyBooking');
         resolve(dataModify);
       } catch (error) {
         reject(error);
@@ -275,7 +275,7 @@ class BookingService {
                 },
               }
           };
-          let data : Booking = await this.Responce(requestData,'LoadBooking');
+          let data = this.Responce(requestData,'LoadBooking');
           resolve(data);
       } catch (error) {
         reject(error);
@@ -316,25 +316,16 @@ class BookingService {
         try {
             setTimeout(async () => {
                 const query = { 'pnrcode': createTicketData.ID };
-                const BookingVal = await this.bookingHistory.findOne(query); 
+                const BookingVal = await this.bookingHistory.findOne(query);
+
                 if (BookingVal && BookingVal.transactionId === null) {
                     // Invoke the callback when transactionId is null
                     callback();
-                } 
+                }
+
                 if (!isEmpty(BookingVal.transactionId)) {
-                    
                     setTimeout(async () => {
                         const BookingHis = await this.bookingHistory.findOne(query);
-                        let UnsecureCardInfo= {};
-                        let Code = 'Cash';
-                        if(createTicketData.Amount > 0){
-                          let Code = 'Credit_Card';
-                          let UnsecureCardInfo= {
-                            TransactionNumber:BookingHis.transactionId,
-                            CardNumber:BookingHis.cardNumber
-                          };
-                        }
-                         
                         const requestData = {
                                 request: {  
                                   UniqueID:{
@@ -345,11 +336,11 @@ class BookingService {
                                       PassengerName: createTicketData.PassengerName
                                   },
                                   Fops:[{
-                                    Code: 'Credit_Card',
+                                    Code: "Credit_Card",
                                     Amount: createTicketData.Amount,
                                     UnsecureCardInfo:{
-                                      TransactionNumber:BookingHis.transactionId,
-                                      CardNumber:BookingHis.cardNumber
+                                        TransactionNumber:BookingVal.transactionId,
+                                        CardNumber:BookingVal.cardNumber
                                     },
                                     MiscInfo: {
                                     RecordReferenceNumber: "10000250"
@@ -362,21 +353,11 @@ class BookingService {
                                   Extensions: null
                                 }
                               };
-                             
-                        let data = this.Responce(requestData,'CreateTicket');
-                        resolve(data);
+                            
+                        let dataModify = this.Responce(requestData,'CreateTicket');
+                        resolve(dataModify);
                     }, 500);
                 } else {
-                  let UnsecureCardInfo= {};
-                  let Code = 'Cash';
-                  if(createTicketData.Amount > 0){
-                    let UnsecureCardInfo= {
-                      TransactionNumber:BookingVal.transactionId,
-                      CardNumber:BookingVal.cardNumber
-                    };
-                    let Code = 'Credit_Card';
-                  }
-                   
                     const requestData = {
                                 request: {  
                                   UniqueID:{
@@ -387,11 +368,11 @@ class BookingService {
                                       PassengerName: createTicketData.PassengerName
                                   },
                                   Fops:[{
-                                    Code: 'Credit_Card',
+                                    Code: "Credit_Card",
                                     Amount: createTicketData.Amount,
                                     UnsecureCardInfo:{
-                                      TransactionNumber:BookingVal.transactionId,
-                                      CardNumber:BookingVal.cardNumber
+                                        TransactionNumber:BookingVal.transactionId,
+                                        CardNumber:BookingVal.cardNumber
                                     },
                                     MiscInfo: {
                                     RecordReferenceNumber: "10000250"
@@ -404,9 +385,8 @@ class BookingService {
                                   Extensions: null
                                 }
                               };
-                               
-                  let data =   this.Responce(requestData,'CreateTicket');
-                  resolve(data);
+                  let dataModify = this.Responce(requestData,'CreateTicket');
+                  resolve(dataModify);
                 }
             }, 500);
         } catch (error) {
@@ -620,9 +600,8 @@ class BookingService {
               },
               CancelSettings: {
                 RefundRequestSettings:    {
-                    Message: "Refund initiated on Beond IBE by Passenger",
-                    RefundRequestActionCode: "Create",
-                    ShouldCancelSegments: true
+                Message: "Refund initiated on Beond IBE by Passenger",
+                      RefundRequestActionCode: "Create"
                 }
               }, 
               RequestInfo: {
@@ -632,8 +611,8 @@ class BookingService {
               Extensions: null
             }
           };
-          let data : Booking = await this.Responce(requestData,'Cancel');
-          resolve(data);
+          let dataModify = this.Responce(requestData,'Cancel');
+          resolve(dataModify);
       } catch (error) {
         reject(error);
       }
@@ -741,8 +720,7 @@ class BookingService {
               "ArrivalDate":  localeDateString(Segments[seg].FlightInfo.DepartureDate),
               "OriginAirportTerminal": Segments[seg].FlightInfo.OriginAirportTerminal,
               "DestinationAirportTerminal": Segments[seg].FlightInfo.DestinationAirportTerminal,
-              "BagAllowances":  BagAllowances,
-              "FlightNumber": Segments[seg].FlightInfo.FlightNumber,
+              "BagAllowances":  BagAllowances
             };
             data.OriginDestination.push(OriginDestination);
             data.PnrInformation = PnrInformation;
@@ -759,9 +737,10 @@ class BookingService {
   
   public async exchangeCreateBooking(bookingData: CreateBookingExchangeDto): Promise<Booking> {
     if (isEmpty(bookingData)) throw new HttpException(400, 'booking request Data is empty'); 
+    var URL = API_URL+'Exchange?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
     const BookingData = new Promise(async (resolve, reject) => {
       try {
-        const result = await this.bookingRequest(bookingData,'Exchange');
+        const result = await this.bookingRequest(bookingData,'CreateBooking');
         let RefETTicketFareAr = bookingData.RefETTicketFare
         let RefETTicketFare = [];
         for (const  key in RefETTicketFareAr) { 
@@ -795,8 +774,8 @@ class BookingService {
             Extensions: null
           }
         };
-        let data : Booking = await  this.Responce(requestData,'Exchange');
-        resolve(data);
+        let dataModify = this.Responce(requestData,'Exchange');
+        resolve(dataModify);
       } catch (error) {
         reject(error);
       }
@@ -1044,8 +1023,8 @@ class BookingService {
               },
             }
           };
-          let data : Booking = await this.Responce(requestData,'Checkin');
-          resolve(data);
+          let dataModify = this.Responce(requestData,'Checkin');
+          resolve(dataModify);
       } catch (error) {
         reject(error);
       }
@@ -1074,8 +1053,8 @@ class BookingService {
               },
             }
           };
-          let data : Booking = await this.Responce(requestData,'Uncheck');
-          resolve(data);
+          let dataModify = this.Responce(requestData,'Uncheck');
+          resolve(dataModify);
       } catch (error) {
         reject(error);
       }
@@ -1439,38 +1418,30 @@ class BookingService {
         var  EMDTicketFares   = response.FareInfo.EMDTicketFares;
         var  RefETTicketFare  = response.TicketInfo.ETTickets;
         var  SeatMaps         = response.SeatMaps;
-        var  FareRules         = response.FareInfo.FareRules;
         dataModify.SeatMaps   = SeatMaps;
-
-        if(method!='Cancel' && FareRules.length > 0){
+        if(method!='Cancel'){
           const parentArray = [{
-            Text: FareRules[0].FareConditionText.Text,
-            Value: FareRules[0].FareConditionText.Value,
-            Children: parseChildren(FareRules[0].FareConditionText.Children),
+            Text: response.FareInfo.FareRules[0].FareConditionText.Text,
+            Value: response.FareInfo.FareRules[0].FareConditionText.Value,
+            Children: parseChildren(response.FareInfo.FareRules[0].FareConditionText.Children),
             Extensions: null
           }];
 
           dataModify.FareRules   =  parentArray;
-
-          // const bagAllowances = await FareRules.map(fareRule => {
-          //   const bagAllowance = fareRule.FareConditionText.Children.find(child => child.Text === "Bag allowance");
-          //     return bagAllowance ? {
-          //         Text: bagAllowance.Text,
-          //         Value: bagAllowance.Value,
-          //         Children: bagAllowance.Children
-          //     } : null;
-          // });
-          // var Weight = '';
-          // if (bagAllowances[0]) {
-          //   var Weight = bagAllowances[0].Value;
-          // } 
         }
         const totalSeatAmountSum = EMDTicketFares
           .filter(item => item.AssociatedSpecialServiceCode === "SEAT")
           .map(item => item.SaleCurrencyAmount.TotalAmount)
           .reduce((sum, amount) => sum + amount, 0);
 
-        
+        const bagAllowances = response.FareInfo.FareRules.map(fareRule => {
+          const bagAllowance = fareRule.FareConditionText.Children.find(child => child.Text === "Bag allowance");
+            return bagAllowance ? {
+                Text: bagAllowance.Text,
+                Value: bagAllowance.Value,
+                Children: bagAllowance.Children
+            } : null;
+        });
         
         if(RefETTicketFare.length==0){
           var  RefETTicketFare = response.MiscInfo.ExchangeableOriginDestinations[0].ETTicketFareTargets;
@@ -1520,16 +1491,18 @@ class BookingService {
                 var Luxury = true;
                 var Lounge =true;
               }
-             
+              if (bagAllowances[0]) {
+               var Weight = bagAllowances[0].Value;
+              } 
               let ct: number = 0;
-              // let BagAllowances = ETTicketFares[ct].OriginDestinationFares[0].CouponFares[0].BagAllowances[0];
-              // let BagAllowances  =  {
-              //   "Quantity": BagAllowancesArr.Quantity,
-              //   "WeightMeasureQualifier": BagAllowancesArr.WeightMeasureQualifier,
-              //   "Weight":BagAllowancesArr.Weight+' '+BagAllowancesArr.WeightMeasureQualifier,
-              //   "Extensions": BagAllowancesArr.Extensions,
-              //   "CarryOn": BagAllowancesArr.CarryOn
-              // };
+              let BagAllowancesArr = ETTicketFares[ct].OriginDestinationFares[0].CouponFares[0].BagAllowances[0];
+              let BagAllowances  =  {
+                "Quantity": BagAllowancesArr.Quantity,
+                "WeightMeasureQualifier": BagAllowancesArr.WeightMeasureQualifier,
+                "Weight":Weight,
+                "Extensions": BagAllowancesArr.Extensions,
+                "CarryOn": BagAllowancesArr.CarryOn
+              };
 
               var OriginCode1 = await this.location.find({Code:Segments[seg].OriginCode});
               for (const  loc2 in OriginCode1) {
@@ -1541,7 +1514,6 @@ class BookingService {
                 var DestinationCity =  DestinationCode1[loc2].city;
                 var DestinationName =  DestinationCode1[loc2].name;
               }
-              let BagAllowances = ETTicketFares[ct].OriginDestinationFares[0].CouponFares[0].BagAllowances[0];
               let OriginDestination =     {
                 "OriginCode": Segments[seg].OriginCode,
                 "OriginCity": OriginCity,
@@ -1558,8 +1530,7 @@ class BookingService {
                 "BagAllowances":  BagAllowances,
                 "Luxury":Luxury,
                 "Lounge":Lounge,
-                "WebClass":secondCharacter,
-                "FlightNumber": Segments[seg].FlightInfo.FlightNumber,
+                "WebClass":secondCharacter
               };
               dataModify.OriginDestination.push(OriginDestination);
               dataModify.PnrInformation = PnrInformation;

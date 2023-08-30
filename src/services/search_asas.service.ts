@@ -128,11 +128,337 @@ class SearchService {
     }); 
     try {
       const responses = await Promise.all(promises); 
-        return this.Responce(responses,OriginDestinationsArray,searchData,currency,symbol,cpd_code);
+      const data = {
+        delight: [],
+        bliss: [],
+        opulence: [],
+      }; 
+
+      var OriginCode      =  searchData.OriginDestinations[0].OriginCode;
+      var DestinationCode =  searchData.OriginDestinations[0].DestinationCode;
+      var LocOrgin =  await this.location.find({Code:OriginCode});
+      for (const  loc1 in LocOrgin) {
+        var originName =  LocOrgin[loc1].name;
+        var originCity =  LocOrgin[loc1].city;
+      }
+      var LocDest =  await this.location.find({Code:DestinationCode});
+      for (const  loc2 in LocDest) {
+        var destinationName =  LocDest[loc2].name;
+        var destinationCity =  LocDest[loc2].city;
+      }
+      responses.forEach((res, key) => {
+          const OriginDestinationsRes = OriginDestinationsArray[key];
+          let faireFmailies = [];
+          if(res.data.Passengers!=null){
+            const Segments = res.data.Segments;
+            const Itineraries = res.data.FareInfo.Itineraries
+            let oriIncre = 0;
+            let desIncre = 0;
+             
+            for (const seg of Segments) {
+              //for (const OriKey in OriginDestinationsRes) {
+                if (seg.OriginCode === OriginDestinationsRes[0].OriginCode &&
+                    seg.DestinationCode === OriginDestinationsRes[0].DestinationCode &&
+                    oriIncre === 0) {
+                    oriIncre += 1;
+                    var DepartureDate   = seg.FlightInfo.DepartureDate;
+                    var ArrivalDate     = seg.FlightInfo.ArrivalDate;
+                    var destinationArrivalTime = formattedTime(ArrivalDate); 
+                    var destinationArrivalDate = localeDateString(ArrivalDate);
+                    var orginDepartureTime     = formattedTime(DepartureDate);
+                    var orginDepartureDate = localeDateString(DepartureDate);
+                  const faireFmailiesOriginObj = {
+                    orginDepartureDate: orginDepartureDate,
+                    orginDepartureTime: orginDepartureTime,
+                    originName: originName,
+                    originCity:originCity,
+                    luxuryPickup: true,   // either field will not return in response
+                    loungeAccess: true,   // either field will not return in response
+                    BagAllowances: [
+                      {
+                        Quantity: Quantity,
+                        WeightMeasureQualifier: WeightMeasureQualifier,
+                        Weight: Weight+' '+WeightMeasureQualifier
+                      }
+                    ],
+                    destinationName: destinationName,
+                    destinationCity: destinationCity,
+                    destinationArrivalDate: destinationArrivalDate,
+                    destinationArrivalTime: destinationArrivalTime,
+                  };
+                  faireFmailies.push(faireFmailiesOriginObj);
+                }
+              //}
+            // for (const DesKey in OriginDestinationsRes) {
+                if(OriginDestinationsRes.length >1){
+                  if (seg.OriginCode === OriginDestinationsRes[1].OriginCode &&
+                      seg.DestinationCode === OriginDestinationsRes[1].DestinationCode && desIncre === 0) {
+                    desIncre += 1; 
+                    var DepartureDate          = seg.FlightInfo.DepartureDate;
+                    var ArrivalDate            = seg.FlightInfo.ArrivalDate;
+                    var destinationArrivalTime = formattedTime(ArrivalDate ); 
+                    var destinationArrivalDate = localeDateString(ArrivalDate);
+                    var orginDepartureTime     = formattedTime(DepartureDate);
+                    var orginDepartureDate     = localeDateString(DepartureDate);
+                    const faireFmailiesDestinationObj = {
+                      orginDepartureDate: orginDepartureDate,
+                      orginDepartureTime: orginDepartureTime,
+                      originName: destinationName,
+                      originCity: destinationCity,
+                      luxuryPickup: true,
+                      loungeAccess: true,
+                      BagAllowances: [
+                        {
+                          Quantity: Quantity,
+                          WeightMeasureQualifier: WeightMeasureQualifier,
+                          Weight: Weight+' '+WeightMeasureQualifier
+                        }
+                      ],
+                      destinationName: originName,
+                      destinationCity: originCity,
+                      destinationArrivalDate: destinationArrivalDate ,
+                      destinationArrivalTime: destinationArrivalTime,
+                    };
+                    faireFmailies.push(faireFmailiesDestinationObj);
+                  }
+                }
+              //}
+              
+            }
+            var  Ref     = res.data.Offer.Ref;
+            if(OriginDestinationsArray[key].length == 1){
+              var Otr1 = OriginDestinationsRes[0].TargetDate;
+              var Dtr1 = OriginDestinationsRes[0].TargetDate; 
+              var Otr = toISOString(OriginDestinationsRes[0].TargetDate);
+              var Dtr =  toISOString(OriginDestinationsRes[0].TargetDate); 
+            }
+            if(OriginDestinationsArray[key].length > 1){
+              var Otr1 = OriginDestinationsRes[0].TargetDate;
+              var Dtr1 = OriginDestinationsRes[1].TargetDate; 
+              var Otr  = toISOString(OriginDestinationsRes[0].TargetDate);
+              var Dtr  =  toISOString(OriginDestinationsRes[1].TargetDate); 
+            } 
+            let  ETTicketFares   = res.data.FareInfo.ETTicketFares;
+            var  Quantity        = res.data.FareInfo.ETTicketFares[0].OriginDestinationFares[0].CouponFares[0].BagAllowances[0].Quantity;
+            var  WeightMeasureQualifier = res.data.FareInfo.ETTicketFares[0].OriginDestinationFares[0].CouponFares[0].BagAllowances[0].WeightMeasureQualifier;
+            var  Weight          = res.data.FareInfo.ETTicketFares[0].OriginDestinationFares[0].CouponFares[0].BagAllowances[0].Weight;
+            let  RefItinerary    = '';
+            
+            const refWebClassDict = {};
+              ETTicketFares.forEach((ticketFare,index) => {
+                const originDestFares = ticketFare.OriginDestinationFares;
+                const refWebClasses = originDestFares.map(fare => fare.RefWebClass);
+                const areAllSame = refWebClasses.every(refWebClass => refWebClass === refWebClasses[0]);
+                if(areAllSame){
+                  refWebClassDict[refWebClasses[0]] = ticketFare.RefItinerary;
+                }
+              });
+              console.log('refWebClassDict',refWebClassDict);
+              for (const key in refWebClassDict) {
+                  if (refWebClassDict.hasOwnProperty(key)) {
+                      const ref = refWebClassDict[key];
+                      const itinerary = Itineraries.find(item => item.Ref === ref);
+                      if (itinerary) {
+                        refWebClassDict[key] = {
+                              "SaleCurrencyAmount": itinerary.SaleCurrencyAmount,
+                              "RefItinerary": itinerary.Ref
+                          };
+                      }
+                  }
+              }
+              console.log('refWebClassDict_1',refWebClassDict);
+              if(searchData.OriginDestinations.length > 1){
+                if((res.data.FareInfo.Itineraries.length > 8 && searchData.DateFlexible==true) || (res.data.FareInfo.Itineraries.length > 2 && searchData.DateFlexible==false)){
+                  let Itinerariesdelight =  refWebClassDict[3];
+                  RefItinerary         = Itinerariesdelight.RefItinerary;
+                  var  BaseAmount      = Itinerariesdelight.SaleCurrencyAmount.BaseAmount;
+                  var  TaxAmount       = Itinerariesdelight.SaleCurrencyAmount.TaxAmount;
+                  var  TotalAmount     = Itinerariesdelight.SaleCurrencyAmount.TotalAmount;
+                  let delight = {
+                    DepartureDate: DepartureDate,
+                    ArrivalDate: ArrivalDate,
+                    Dtr:Dtr,
+                    Otr:Otr,
+                    Otr1:Otr1,
+                    Dtr1:Dtr1,
+                    OriginCode: OriginCode,
+                    DestinationCode: DestinationCode,
+                    BaseAmount: BaseAmount,
+                    TaxAmount: TaxAmount,
+                    TotalAmount: TotalAmount,
+                    RefItinerary:RefItinerary,
+                    Ref:Ref,
+                    originCity:originCity,
+                    destinationCity:destinationCity,
+                    currency: currency,
+                    symbol:symbol,
+                    cpd_code:cpd_code,
+                    FaireFamilies:faireFmailies,
+                  };
+                  data.delight.push(delight);
+                }  
+                if((res.data.FareInfo.Itineraries.length > 3 && searchData.DateFlexible==true) || (res.data.FareInfo.Itineraries.length > 2 && searchData.DateFlexible==false)){
+                  let Itinerariesbliss  = refWebClassDict[2];
+                  RefItinerary         =  Itinerariesbliss.RefItinerary;   
+                  var  BaseAmount      = Itinerariesbliss.SaleCurrencyAmount.BaseAmount;
+                  var  TaxAmount       = Itinerariesbliss.SaleCurrencyAmount.TaxAmount;
+                  var  TotalAmount     = Itinerariesbliss.SaleCurrencyAmount.TotalAmount;
+                  let bliss = {
+                    DepartureDate: DepartureDate,
+                    ArrivalDate: ArrivalDate,
+                    Dtr:Dtr,
+                    Otr:Otr,
+                    Otr1:Otr1,
+                    Dtr1:Dtr1,
+                    OriginCode: OriginCode,
+                    DestinationCode: DestinationCode,
+                    BaseAmount: BaseAmount,
+                    TaxAmount: TaxAmount,
+                    TotalAmount: TotalAmount,
+                    RefItinerary:RefItinerary,
+                    Ref:Ref,
+                    originCity:originCity,
+                    destinationCity:destinationCity,
+                    currency: currency,
+                    symbol:symbol,
+                    cpd_code:cpd_code,
+                    FaireFamilies:faireFmailies,
+                  };
+                  data.bliss.push(bliss);
+                }
+              }
+              if(searchData.OriginDestinations.length ==1){
+                  let Itinerariesdelight =  refWebClassDict[3]; 
+                  let RefItinerary     =  Itinerariesdelight.RefItinerary;
+                  var  BaseAmount      = Itinerariesdelight.SaleCurrencyAmount.BaseAmount;
+                  var  TaxAmount       = Itinerariesdelight.SaleCurrencyAmount.TaxAmount;
+                  var  TotalAmount     = Itinerariesdelight.SaleCurrencyAmount.TotalAmount;
+                  let delight = {
+                    DepartureDate: DepartureDate,
+                    ArrivalDate: ArrivalDate,
+                    Dtr:Dtr,
+                    Otr:Otr,
+                    Otr1:Otr1,
+                    Dtr1:Dtr1,
+                    OriginCode: OriginCode,
+                    DestinationCode: DestinationCode,
+                    BaseAmount: BaseAmount,
+                    TaxAmount: TaxAmount,
+                    TotalAmount: TotalAmount,
+                    RefItinerary:RefItinerary,
+                    Ref:Ref,
+                    originCity:originCity,
+                    destinationCity:destinationCity,
+                    currency: currency,
+                    symbol:symbol,
+                    cpd_code:cpd_code,
+                    FaireFamilies:faireFmailies,
+                  }
+                  data.delight.push(delight);
+                  let   Itinerariesbliss =  refWebClassDict[2];
+                  RefItinerary       =  Itinerariesbliss.RefItinerary;
+                  var  BaseAmount      = Itinerariesbliss.SaleCurrencyAmount.BaseAmount;
+                  var  TaxAmount       = Itinerariesbliss.SaleCurrencyAmount.TaxAmount;
+                  var  TotalAmount     = Itinerariesbliss.SaleCurrencyAmount.TotalAmount;
+                  let bliss = {
+                    DepartureDate: DepartureDate,
+                    ArrivalDate: ArrivalDate,
+                    Dtr:Dtr,
+                    Otr:Otr,
+                    Otr1:Otr1,
+                    Dtr1:Dtr1,
+                    OriginCode: OriginCode,
+                    DestinationCode: DestinationCode,
+                    BaseAmount: BaseAmount,
+                    TaxAmount: TaxAmount,
+                    TotalAmount: TotalAmount,
+                    RefItinerary:RefItinerary,
+                    Ref:Ref,
+                    originCity:originCity,
+                    destinationCity:destinationCity,
+                    currency: currency,
+                    symbol:symbol,
+                    cpd_code:cpd_code,
+                    FaireFamilies:faireFmailies,
+                  };
+                  data.bliss.push(bliss);
+              }  
+              
+                const Itinerariesopulence =  refWebClassDict[1]; 
+                RefItinerary         =  Itinerariesopulence.RefItinerary;
+                var  BaseAmount      = Itinerariesopulence.SaleCurrencyAmount.BaseAmount;
+                var  TaxAmount       = Itinerariesopulence.SaleCurrencyAmount.TaxAmount;
+                var  TotalAmount     = Itinerariesopulence.SaleCurrencyAmount.TotalAmount;
+                let opulence = {
+                  DepartureDate: DepartureDate,
+                  ArrivalDate: ArrivalDate,
+                  Dtr:Dtr,
+                  Otr:Otr,
+                  Otr1:Otr1,
+                  Dtr1:Dtr1,
+                  OriginCode: OriginCode,
+                  DestinationCode: DestinationCode,
+                  BaseAmount: BaseAmount,
+                  TaxAmount: TaxAmount,
+                  TotalAmount: TotalAmount,
+                  RefItinerary:RefItinerary,
+                  Ref:Ref,
+                  originCity:originCity,
+                  destinationCity:destinationCity,
+                  currency: currency,
+                  symbol:symbol,
+                  cpd_code:cpd_code,
+                  FaireFamilies:faireFmailies,
+                }; 
+                data.opulence.push(opulence);
+              
+            }else{
+              if(OriginDestinationsArray[key].length == 1){
+                var Otr1 = OriginDestinationsArray[key][0].TargetDate;
+                var Dtr1 = OriginDestinationsArray[key][0].TargetDate;
+              } 
+
+              if(OriginDestinationsArray[key].length > 1){
+                var Otr1 = OriginDestinationsArray[key][0].TargetDate;
+                var Dtr1 = OriginDestinationsArray[key][1].TargetDate; 
+              } 
+            
+              DepartureDate = toISOString(Otr1);
+              var Otr = toISOString(Otr1);
+              Dtr = toISOString(Dtr1);
+              let myObj = {
+                DepartureDate: DepartureDate,
+                ArrivalDate:DepartureDate,
+                Otr:Otr,
+                Dtr:Dtr,
+                Otr1:Otr1,
+                Dtr1:Dtr1,
+                OriginCode: '-',
+                DestinationCode: '-',
+                BaseAmount: '-',
+                TaxAmount: '-',
+                TotalAmount: '-',
+                RefItinerary:'-',
+                Ref:'-',
+                originCity:'-',
+                destinationCity:'-',
+                currency: '-',
+                symbol:'-',
+                cpd_code:'-',
+                FaireFamilies:faireFmailies,
+              };
+              data.delight.push(myObj);
+              data.bliss.push(myObj);
+              data.opulence.push(myObj); 
+            } 
+        });
+
+        return data;
       } catch (error) {
         console.error('Error:', error);
         return null;
-      } 
+      }
+      
   }
   public async prepareFlights(prepareData: prepareFlightsDto): Promise<Search> {
     if (isEmpty(prepareData)) throw new HttpException(400, 'empty String');
@@ -394,37 +720,9 @@ class SearchService {
       responses.forEach((res, key) => { 
         const OriginDestinationsRes = OriginDestinationsArray[key]; 
         let faireFmailies = [];
-        let faireFmailiesDelight = [];
-        let faireFmailiesBliss = [];
-        let faireFmailiesOpulence = []
         if(res.data.Segments!=null){
           const Segments = res.data.Segments;
           const Itineraries = res.data.FareInfo.Itineraries;
-          let  ETTicketFares   = res.data.FareInfo.ETTicketFares;
-          let  RefItinerary    = "";
-          const refWebClassDict = {};
-          const BagAllowances = {};
-          ETTicketFares.forEach((ticketFare,index) => {
-              const originDestFares = ticketFare.OriginDestinationFares;
-              const refWebClasses = originDestFares.map(fare => fare.RefWebClass);
-              const areAllSame = refWebClasses.every(refWebClass => refWebClass === refWebClasses[0]);
-              if(areAllSame){
-                refWebClassDict[refWebClasses[0]] = ticketFare.RefItinerary;
-                BagAllowances[refWebClasses[0]] = originDestFares;
-              }
-            });
-            for (const key in refWebClassDict) {
-              if (refWebClassDict.hasOwnProperty(key)) {
-                  const ref = refWebClassDict[key];
-                  const itinerary = Itineraries.find(item => item.Ref === ref);
-                  if (itinerary) {
-                    refWebClassDict[key] = {
-                          "SaleCurrencyAmount": itinerary.SaleCurrencyAmount,
-                          "RefItinerary": itinerary.Ref
-                      };
-                  }
-              }
-          }
           let oriIncre = 0;
           let desIncre = 0;
           var  OriginCode      = OriginDestinationsRes[0].OriginCode;
@@ -441,52 +739,26 @@ class SearchService {
                   var destinationArrivalDate = localeDateString(ArrivalDate);
                   var orginDepartureTime     = formattedTime(DepartureDate);
                   var orginDepartureDate = localeDateString(DepartureDate);
-                const faireFmailiesOriginObjO = {
+                const faireFmailiesOriginObj = {
                   orginDepartureDate: orginDepartureDate,
                   orginDepartureTime: orginDepartureTime,
                   originName: originName,
                   originCity:originCity, 
                   luxuryPickup: true,   // either field will not return in response
                   loungeAccess: true,   // either field will not return in response
-                  BagAllowances:BagAllowances[1][0].CouponFares[0].BagAllowances[0],
+                  BagAllowances: [
+                    {
+                      Quantity: Quantity,
+                      WeightMeasureQualifier: WeightMeasureQualifier,
+                      Weight: Weight
+                    }
+                  ],
                   destinationName: destinationName,
                   destinationCity: destinationCity,
                   destinationArrivalDate: destinationArrivalDate,
                   destinationArrivalTime: destinationArrivalTime,
-                  FlightNumber:seg.FlightInfo.FlightNumber,
                 };
-                const faireFmailiesOriginObjB = {
-                  orginDepartureDate: orginDepartureDate,
-                  orginDepartureTime: orginDepartureTime,
-                  originName: originName,
-                  originCity:originCity, 
-                  luxuryPickup: true,   // either field will not return in response
-                  loungeAccess: true,   // either field will not return in response
-                  BagAllowances:BagAllowances[2][0].CouponFares[0].BagAllowances[0],
-                  destinationName: destinationName,
-                  destinationCity: destinationCity,
-                  destinationArrivalDate: destinationArrivalDate,
-                  destinationArrivalTime: destinationArrivalTime,
-                  FlightNumber:seg.FlightInfo.FlightNumber,
-                };
-                const faireFmailiesOriginObjD = {
-                  orginDepartureDate: orginDepartureDate,
-                  orginDepartureTime: orginDepartureTime,
-                  originName: originName,
-                  originCity:originCity, 
-                  luxuryPickup: true,   // either field will not return in response
-                  loungeAccess: true,   // either field will not return in response
-                  BagAllowances:BagAllowances[3][0].CouponFares[0].BagAllowances[0],
-                  destinationName: destinationName,
-                  destinationCity: destinationCity,
-                  destinationArrivalDate: destinationArrivalDate,
-                  destinationArrivalTime: destinationArrivalTime,
-                  FlightNumber:seg.FlightInfo.FlightNumber,
-                };
-              
-                faireFmailiesDelight.push(faireFmailiesOriginObjD);
-                faireFmailiesBliss.push(faireFmailiesOriginObjB);
-                faireFmailiesOpulence.push(faireFmailiesOriginObjO);
+                faireFmailies.push(faireFmailiesOriginObj);
                 // Process or use the faireFmailiesOriginObj as needed
               }
             if(OriginDestinationsRes.length >1){
@@ -499,53 +771,26 @@ class SearchService {
                 var destinationArrivalDate = localeDateString(ArrivalDate);
                 var orginDepartureTime     = formattedTime(DepartureDate);
                 var orginDepartureDate = localeDateString(DepartureDate);
-                const faireFmailiesDestinationObjO = {
+                const faireFmailiesDestinationObj = {
                   orginDepartureDate: orginDepartureDate,
                   orginDepartureTime: orginDepartureTime,
                   originName: destinationName,
                   originCity: destinationCity,
                   luxuryPickup: true,
                   loungeAccess: true,
-                  BagAllowances:BagAllowances[1][1].CouponFares[0].BagAllowances[0],
+                  BagAllowances: [
+                    {
+                      Quantity: BagAllowances[0].Quantity,
+                      WeightMeasureQualifier: BagAllowances[0].WeightMeasureQualifier,
+                      Weight: BagAllowances[0].Weight
+                    }
+                  ],
                   destinationName: originName,
                   destinationCity: originCity,
                   destinationArrivalDate: destinationArrivalDate ,
                   destinationArrivalTime: destinationArrivalTime,
-                  FlightNumber:seg.FlightInfo.FlightNumber,
                 };
-                const faireFmailiesDestinationObjB = {
-                  orginDepartureDate: orginDepartureDate,
-                  orginDepartureTime: orginDepartureTime,
-                  originName: destinationName,
-                  originCity: destinationCity,
-                  luxuryPickup: true,
-                  loungeAccess: true,
-                  BagAllowances:BagAllowances[2][1].CouponFares[0].BagAllowances[0],
-                  destinationName: originName,
-                  destinationCity: originCity,
-                  destinationArrivalDate: destinationArrivalDate ,
-                  destinationArrivalTime: destinationArrivalTime,
-                  FlightNumber:seg.FlightInfo.FlightNumber,
-                };
-                const faireFmailiesDestinationObjD = {
-                  orginDepartureDate: orginDepartureDate,
-                  orginDepartureTime: orginDepartureTime,
-                  originName: destinationName,
-                  originCity: destinationCity,
-                  luxuryPickup: true,
-                  loungeAccess: true,
-                  BagAllowances:BagAllowances[3][1].CouponFares[0].BagAllowances[0],
-                  destinationName: originName,
-                  destinationCity: originCity,
-                  destinationArrivalDate: destinationArrivalDate ,
-                  destinationArrivalTime: destinationArrivalTime,
-                  FlightNumber:seg.FlightInfo.FlightNumber,
-                };
-
-                faireFmailiesDelight.push(faireFmailiesDestinationObjD);
-                faireFmailiesBliss.push(faireFmailiesDestinationObjB);
-                faireFmailiesOpulence.push(faireFmailiesDestinationObjO);
-                
+                faireFmailies.push(faireFmailiesDestinationObj);
               }
             }
             //}
@@ -564,9 +809,33 @@ class SearchService {
             var Otr = toISOString(OriginDestinationsRes[0].TargetDate);
             var Dtr =  toISOString(OriginDestinationsRes[1].TargetDate); 
           } 
-            
+          let  ETTicketFares   = res.data.FareInfo.ETTicketFares;
+          let  RefItinerary    = "";
+          const refWebClassDict = {};
+          const BagAllowances = {};
+            ETTicketFares.forEach((ticketFare,index) => {
+              const originDestFares = ticketFare.OriginDestinationFares;
+              const refWebClasses = originDestFares.map(fare => fare.RefWebClass);
+              const areAllSame = refWebClasses.every(refWebClass => refWebClass === refWebClasses[0]);
+              if(areAllSame){
+                refWebClassDict[refWebClasses[0]] = ticketFare.RefItinerary;
+                BagAllowances[0] = originDestFares.CouponFares[0].BagAllowances[0]; 
+              }
+            });
+            for (const key in refWebClassDict) {
+                if (refWebClassDict.hasOwnProperty(key)) {
+                    const ref = refWebClassDict[key];
+                    const itinerary = Itineraries.find(item => item.Ref === ref);
+                    if (itinerary) {
+                      refWebClassDict[key] = {
+                            "SaleCurrencyAmount": itinerary.SaleCurrencyAmount,
+                            "RefItinerary": itinerary.Ref
+                        };
+                    }
+                }
+            }  
           const Itinerariesdelight =  refWebClassDict[3];
-           RefItinerary         = Itinerariesdelight.RefItinerary;
+          RefItinerary         = Itinerariesdelight.RefItinerary;
           var  BaseAmount      = Itinerariesdelight.SaleCurrencyAmount.BaseAmount;
           var  TaxAmount       = Itinerariesdelight.SaleCurrencyAmount.TaxAmount;
           var  TotalAmount     = Itinerariesdelight.SaleCurrencyAmount.TotalAmount;
@@ -589,13 +858,11 @@ class SearchService {
             currency: currency,
             symbol:symbol,
             cpd_code:cpd_code,
-            FaireFamilies:faireFmailiesDelight,
+            FaireFamilies:faireFmailies,
           };
           data.delight.push(delight);
           if(res.data.FareInfo.Itineraries.length > 2){
             const Itinerariesbliss =  refWebClassDict[2];  
- 
-
             RefItinerary         = Itinerariesbliss.RefItinerary;
             var  BaseAmount      = Itinerariesbliss.SaleCurrencyAmount.BaseAmount;
             var  TaxAmount       = Itinerariesbliss.SaleCurrencyAmount.TaxAmount;
@@ -619,13 +886,12 @@ class SearchService {
               currency: currency,
               symbol:symbol,
               cpd_code:cpd_code,
-              FaireFamilies:faireFmailiesBliss,
+              FaireFamilies:faireFmailies,
             };
             data.bliss.push(bliss);
           }  
           if(res.data.FareInfo.Itineraries.length > 2){
             const Itinerariesopulence =  refWebClassDict[1]; 
-             
             RefItinerary         =  Itinerariesopulence.RefItinerary;
             var  BaseAmount      = Itinerariesopulence.SaleCurrencyAmount.BaseAmount;
             var  TaxAmount       = Itinerariesopulence.SaleCurrencyAmount.TaxAmount;
@@ -649,7 +915,7 @@ class SearchService {
               currency: currency,
               symbol:symbol,
               cpd_code:cpd_code,
-              FaireFamilies:faireFmailiesOpulence,
+              FaireFamilies:faireFmailies,
             }; 
             data.opulence.push(opulence);
           }
@@ -928,405 +1194,52 @@ class SearchService {
     });
      return transformedFareFamily;  
   }
-  async Responce(responses: any,OriginDestinationsArray:any,searchData:any,currency:any,symbol:any,cpd_code:any): Promise<any> {
-    
-    const data = {
-      delight: [],
-      bliss: [],
-      opulence: [],
-    }; 
-
-    var OriginCode      =  searchData.OriginDestinations[0].OriginCode;
-    var DestinationCode =  searchData.OriginDestinations[0].DestinationCode;
-    var LocOrgin =  await this.location.find({Code:OriginCode});
-    for (const  loc1 in LocOrgin) {
-      var originName =  LocOrgin[loc1].name;
-      var originCity =  LocOrgin[loc1].city;
-    }
-    var LocDest =  await this.location.find({Code:DestinationCode});
-    for (const  loc2 in LocDest) {
-      var destinationName =  LocDest[loc2].name;
-      var destinationCity =  LocDest[loc2].city;
-    }
-    responses.forEach((res, key) => {
-        const OriginDestinationsRes = OriginDestinationsArray[key];
-        let faireFmailiesDelight = [];
-        let faireFmailiesBliss = [];
-        let faireFmailiesOpulence = [];
-        let faireFmailies = [];
-        if(res.data.Passengers!=null){
-          const Segments = res.data.Segments;
-          const Itineraries = res.data.FareInfo.Itineraries
-          let oriIncre = 0;
-          let desIncre = 0;
-           
-          let  ETTicketFares   = res.data.FareInfo.ETTicketFares;
-          let  RefItinerary    = "";
-          const refWebClassDict = {};
-          const BagAllowances = {};
-          ETTicketFares.forEach((ticketFare,index) => {
-            const originDestFares = ticketFare.OriginDestinationFares;
-            const refWebClasses = originDestFares.map(fare => fare.RefWebClass);
-            const areAllSame = refWebClasses.every(refWebClass => refWebClass === refWebClasses[0]);
-            if(areAllSame){
-              refWebClassDict[refWebClasses[0]] = ticketFare.RefItinerary;
-              BagAllowances[refWebClasses[0]] = originDestFares; 
-            }
-          });
-          console.log('BagAllowances========1=',BagAllowances[1][0].CouponFares[0].BagAllowances);
-          console.log('BagAllowances========2=',BagAllowances[2][0].CouponFares[0].BagAllowances);
-          console.log('BagAllowances========3=',BagAllowances[3][0].CouponFares[0].BagAllowances);
-          for (const key in refWebClassDict) {
-              if (refWebClassDict.hasOwnProperty(key)) {
-                  const ref = refWebClassDict[key];
-                  const itinerary = Itineraries.find(item => item.Ref === ref);
-                  if (itinerary) {
-                    refWebClassDict[key] = {
-                          "SaleCurrencyAmount": itinerary.SaleCurrencyAmount,
-                          "RefItinerary": itinerary.Ref
-                      };
-                  }
-              }
-          }
-          for (const seg of Segments) {
-            //for (const OriKey in OriginDestinationsRes) {
-              if (seg.OriginCode === OriginDestinationsRes[0].OriginCode &&
-                  seg.DestinationCode === OriginDestinationsRes[0].DestinationCode &&
-                  oriIncre === 0) {
-                  oriIncre += 1;
-                  var DepartureDate   = seg.FlightInfo.DepartureDate;
-                  var ArrivalDate     = seg.FlightInfo.ArrivalDate;
-                  var destinationArrivalTime = formattedTime(ArrivalDate); 
-                  var destinationArrivalDate = localeDateString(ArrivalDate);
-                  var orginDepartureTime     = formattedTime(DepartureDate);
-                  var orginDepartureDate = localeDateString(DepartureDate);
-                const faireFmailiesOriginObjO = {
-                  orginDepartureDate: orginDepartureDate,
-                  orginDepartureTime: orginDepartureTime,
-                  originName: originName,
-                  originCity:originCity,
-                  luxuryPickup: true,   // either field will not return in response
-                  loungeAccess: true,   // either field will not return in response
-                  BagAllowances:BagAllowances[1][0].CouponFares[0].BagAllowances[0],
-                  destinationName: destinationName,
-                  destinationCity: destinationCity,
-                  destinationArrivalDate: destinationArrivalDate,
-                  destinationArrivalTime: destinationArrivalTime,
-                  FlightNumber:seg.FlightInfo.FlightNumber,
-                };
-
-                const faireFmailiesOriginObjB = {
-                  orginDepartureDate: orginDepartureDate,
-                  orginDepartureTime: orginDepartureTime,
-                  originName: originName,
-                  originCity:originCity,
-                  luxuryPickup: true,   // either field will not return in response
-                  loungeAccess: true,   // either field will not return in response
-                  BagAllowances:BagAllowances[2][0].CouponFares[0].BagAllowances[0],
-                  destinationName: destinationName,
-                  destinationCity: destinationCity,
-                  destinationArrivalDate: destinationArrivalDate,
-                  destinationArrivalTime: destinationArrivalTime,
-                  FlightNumber:seg.FlightInfo.FlightNumber,
-                };
-                
-                const faireFmailiesOriginObjD = {
-                  orginDepartureDate: orginDepartureDate,
-                  orginDepartureTime: orginDepartureTime,
-                  originName: originName,
-                  originCity:originCity,
-                  luxuryPickup: true,   // either field will not return in response
-                  loungeAccess: true,   // either field will not return in response
-                  BagAllowances:BagAllowances[3][0].CouponFares[0].BagAllowances[0],
-                  destinationName: destinationName,
-                  destinationCity: destinationCity,
-                  destinationArrivalDate: destinationArrivalDate,
-                  destinationArrivalTime: destinationArrivalTime,
-                  FlightNumber:seg.FlightInfo.FlightNumber,
-                };
-                faireFmailiesDelight.push(faireFmailiesOriginObjD);
-                faireFmailiesBliss.push(faireFmailiesOriginObjB);
-                faireFmailiesOpulence.push(faireFmailiesOriginObjO);
-              }
-            //}
-          // for (const DesKey in OriginDestinationsRes) {
-              if(OriginDestinationsRes.length >1){
-                if (seg.OriginCode === OriginDestinationsRes[1].OriginCode &&
-                    seg.DestinationCode === OriginDestinationsRes[1].DestinationCode && desIncre === 0) {
-                  desIncre += 1; 
-                  var DepartureDate          = seg.FlightInfo.DepartureDate;
-                  var ArrivalDate            = seg.FlightInfo.ArrivalDate;
-                  var destinationArrivalTime = formattedTime(ArrivalDate ); 
-                  var destinationArrivalDate = localeDateString(ArrivalDate);
-                  var orginDepartureTime     = formattedTime(DepartureDate);
-                  var orginDepartureDate     = localeDateString(DepartureDate);
-                  const faireFmailiesDestinationObjO = {
-                    orginDepartureDate: orginDepartureDate,
-                    orginDepartureTime: orginDepartureTime,
-                    originName: destinationName,
-                    originCity: destinationCity,
-                    luxuryPickup: true,
-                    loungeAccess: true,
-                    BagAllowances:BagAllowances[1][1].CouponFares[0].BagAllowances[0],
-                    destinationName: originName,
-                    destinationCity: originCity,
-                    destinationArrivalDate: destinationArrivalDate ,
-                    destinationArrivalTime: destinationArrivalTime,
-                    FlightNumber:seg.FlightInfo.FlightNumber,
-                  };
-
-                  const faireFmailiesDestinationObjB = {
-                    orginDepartureDate: orginDepartureDate,
-                    orginDepartureTime: orginDepartureTime,
-                    originName: destinationName,
-                    originCity: destinationCity,
-                    luxuryPickup: true,
-                    loungeAccess: true,
-                    BagAllowances:BagAllowances[2][1].CouponFares[0].BagAllowances[0],
-                    destinationName: originName,
-                    destinationCity: originCity,
-                    destinationArrivalDate: destinationArrivalDate ,
-                    destinationArrivalTime: destinationArrivalTime,
-                    FlightNumber:seg.FlightInfo.FlightNumber,
-                  };
-                 
-                  const faireFmailiesDestinationObjD = {
-                    orginDepartureDate: orginDepartureDate,
-                    orginDepartureTime: orginDepartureTime,
-                    originName: destinationName,
-                    originCity: destinationCity,
-                    luxuryPickup: true,
-                    loungeAccess: true,
-                    BagAllowances:BagAllowances[3][1].CouponFares[0].BagAllowances[0],
-                    destinationName: originName,
-                    destinationCity: originCity,
-                    destinationArrivalDate: destinationArrivalDate ,
-                    destinationArrivalTime: destinationArrivalTime,
-                    FlightNumber:seg.FlightInfo.FlightNumber,
-                  };
-
-                  faireFmailiesDelight.push(faireFmailiesDestinationObjD);
-                  faireFmailiesBliss.push(faireFmailiesDestinationObjB);
-                  faireFmailiesOpulence.push(faireFmailiesDestinationObjO);
-                }
-              }
-            //}
-            
-          }
-          var  Ref     = res.data.Offer.Ref;
-          if(OriginDestinationsArray[key].length == 1){
-            var Otr1 = OriginDestinationsRes[0].TargetDate;
-            var Dtr1 = OriginDestinationsRes[0].TargetDate; 
-            var Otr = toISOString(OriginDestinationsRes[0].TargetDate);
-            var Dtr =  toISOString(OriginDestinationsRes[0].TargetDate); 
-          }
-          if(OriginDestinationsArray[key].length > 1){
-            var Otr1 = OriginDestinationsRes[0].TargetDate;
-            var Dtr1 = OriginDestinationsRes[1].TargetDate; 
-            var Otr  = toISOString(OriginDestinationsRes[0].TargetDate);
-            var Dtr  =  toISOString(OriginDestinationsRes[1].TargetDate); 
-          } 
-           
-            if(searchData.OriginDestinations.length > 1){
-              if((res.data.FareInfo.Itineraries.length > 8 && searchData.DateFlexible==true) || (res.data.FareInfo.Itineraries.length > 2 && searchData.DateFlexible==false)){
-                let Itinerariesdelight =  refWebClassDict[3];
-                
-                RefItinerary         = Itinerariesdelight.RefItinerary;
-                var  BaseAmount      = Itinerariesdelight.SaleCurrencyAmount.BaseAmount;
-                var  TaxAmount       = Itinerariesdelight.SaleCurrencyAmount.TaxAmount;
-                var  TotalAmount     = Itinerariesdelight.SaleCurrencyAmount.TotalAmount;
-                 
-                let delight = {
-                  DepartureDate: DepartureDate,
-                  ArrivalDate: ArrivalDate,
-                  Dtr:Dtr,
-                  Otr:Otr,
-                  Otr1:Otr1,
-                  Dtr1:Dtr1,
-                  OriginCode: OriginCode,
-                  DestinationCode: DestinationCode,
-                  BaseAmount: BaseAmount,
-                  TaxAmount: TaxAmount,
-                  TotalAmount: TotalAmount,
-                  RefItinerary:RefItinerary,
-                  Ref:Ref,
-                  originCity:originCity,
-                  destinationCity:destinationCity,
-                  currency: currency,
-                  symbol:symbol,
-                  cpd_code:cpd_code,
-                  FaireFamilies:faireFmailiesDelight,
-                };
-                data.delight.push(delight);
-              }  
-              if((res.data.FareInfo.Itineraries.length > 3 && searchData.DateFlexible==true) || (res.data.FareInfo.Itineraries.length > 2 && searchData.DateFlexible==false)){
-                let Itinerariesbliss  = refWebClassDict[2];
-               
-                   
-                RefItinerary         =  Itinerariesbliss.RefItinerary;   
-                var  BaseAmount      = Itinerariesbliss.SaleCurrencyAmount.BaseAmount;
-                var  TaxAmount       = Itinerariesbliss.SaleCurrencyAmount.TaxAmount;
-                var  TotalAmount     = Itinerariesbliss.SaleCurrencyAmount.TotalAmount;
-                let bliss = {
-                  DepartureDate: DepartureDate,
-                  ArrivalDate: ArrivalDate,
-                  Dtr:Dtr,
-                  Otr:Otr,
-                  Otr1:Otr1,
-                  Dtr1:Dtr1,
-                  OriginCode: OriginCode,
-                  DestinationCode: DestinationCode,
-                  BaseAmount: BaseAmount,
-                  TaxAmount: TaxAmount,
-                  TotalAmount: TotalAmount,
-                  RefItinerary:RefItinerary,
-                  Ref:Ref,
-                  originCity:originCity,
-                  destinationCity:destinationCity,
-                  currency: currency,
-                  symbol:symbol,
-                  cpd_code:cpd_code,
-                  FaireFamilies:faireFmailiesBliss,
-                };
-                data.bliss.push(bliss);
-              }
-            }
-            if(searchData.OriginDestinations.length ==1){
-                let Itinerariesdelight =  refWebClassDict[3];
-              
-                 
-                let RefItinerary     =  Itinerariesdelight.RefItinerary;
-                var  BaseAmount      = Itinerariesdelight.SaleCurrencyAmount.BaseAmount;
-                var  TaxAmount       = Itinerariesdelight.SaleCurrencyAmount.TaxAmount;
-                var  TotalAmount     = Itinerariesdelight.SaleCurrencyAmount.TotalAmount;
-                let delight = {
-                  DepartureDate: DepartureDate,
-                  ArrivalDate: ArrivalDate,
-                  Dtr:Dtr,
-                  Otr:Otr,
-                  Otr1:Otr1,
-                  Dtr1:Dtr1,
-                  OriginCode: OriginCode,
-                  DestinationCode: DestinationCode,
-                  BaseAmount: BaseAmount,
-                  TaxAmount: TaxAmount,
-                  TotalAmount: TotalAmount,
-                  RefItinerary:RefItinerary,
-                  Ref:Ref,
-                  originCity:originCity,
-                  destinationCity:destinationCity,
-                  currency: currency,
-                  symbol:symbol,
-                  cpd_code:cpd_code,
-                  FaireFamilies:faireFmailiesDelight,
-                }
-                data.delight.push(delight);
-                let   Itinerariesbliss =  refWebClassDict[2];
-                 
-                 
-                RefItinerary       =  Itinerariesbliss.RefItinerary;
-                var  BaseAmount      = Itinerariesbliss.SaleCurrencyAmount.BaseAmount;
-                var  TaxAmount       = Itinerariesbliss.SaleCurrencyAmount.TaxAmount;
-                var  TotalAmount     = Itinerariesbliss.SaleCurrencyAmount.TotalAmount;
-                let bliss = {
-                  DepartureDate: DepartureDate,
-                  ArrivalDate: ArrivalDate,
-                  Dtr:Dtr,
-                  Otr:Otr,
-                  Otr1:Otr1,
-                  Dtr1:Dtr1,
-                  OriginCode: OriginCode,
-                  DestinationCode: DestinationCode,
-                  BaseAmount: BaseAmount,
-                  TaxAmount: TaxAmount,
-                  TotalAmount: TotalAmount,
-                  RefItinerary:RefItinerary,
-                  Ref:Ref,
-                  originCity:originCity,
-                  destinationCity:destinationCity,
-                  currency: currency,
-                  symbol:symbol,
-                  cpd_code:cpd_code,
-                  FaireFamilies:faireFmailiesBliss,
-                };
-                data.bliss.push(bliss);
-            }  
-            
-              const Itinerariesopulence =  refWebClassDict[1];
-              
-              RefItinerary         =  Itinerariesopulence.RefItinerary;
-              var  BaseAmount      = Itinerariesopulence.SaleCurrencyAmount.BaseAmount;
-              var  TaxAmount       = Itinerariesopulence.SaleCurrencyAmount.TaxAmount;
-              var  TotalAmount     = Itinerariesopulence.SaleCurrencyAmount.TotalAmount;
-              let opulence = {
-                DepartureDate: DepartureDate,
-                ArrivalDate: ArrivalDate,
-                Dtr:Dtr,
-                Otr:Otr,
-                Otr1:Otr1,
-                Dtr1:Dtr1,
-                OriginCode: OriginCode,
-                DestinationCode: DestinationCode,
-                BaseAmount: BaseAmount,
-                TaxAmount: TaxAmount,
-                TotalAmount: TotalAmount,
-                RefItinerary:RefItinerary,
-                Ref:Ref,
-                originCity:originCity,
-                destinationCity:destinationCity,
-                currency: currency,
-                symbol:symbol,
-                cpd_code:cpd_code,
-                FaireFamilies:faireFmailiesOpulence,
-              }; 
-              data.opulence.push(opulence);
-            
-          }else{
-            if(OriginDestinationsArray[key].length == 1){
-              var Otr1 = OriginDestinationsArray[key][0].TargetDate;
-              var Dtr1 = OriginDestinationsArray[key][0].TargetDate;
-            } 
-
-            if(OriginDestinationsArray[key].length > 1){
-              var Otr1 = OriginDestinationsArray[key][0].TargetDate;
-              var Dtr1 = OriginDestinationsArray[key][1].TargetDate; 
-            } 
-          
-            DepartureDate = toISOString(Otr1);
-            var Otr = toISOString(Otr1);
-            Dtr = toISOString(Dtr1);
-            let myObj = {
-              DepartureDate: DepartureDate,
-              ArrivalDate:DepartureDate,
-              Otr:Otr,
-              Dtr:Dtr,
-              Otr1:Otr1,
-              Dtr1:Dtr1,
-              OriginCode: '-',
-              DestinationCode: '-',
-              BaseAmount: '-',
-              TaxAmount: '-',
-              TotalAmount: '-',
-              RefItinerary:'-',
-              Ref:'-',
-              originCity:'-',
-              destinationCity:'-',
-              currency: '-',
-              symbol:'-',
-              cpd_code:'-',
-              FaireFamilies:faireFmailies,
-            };
-            data.delight.push(myObj);
-            data.bliss.push(myObj);
-            data.opulence.push(myObj); 
-          } 
-    }); 
-    return data; 
-     
-  }
 }
 
+async function processData(res) {
+  const dataPer = {
+    PassengersDetails: [],
+    Passengers: [],
+    SeatMaps: [],
+    EMDTicketFareOptions: []
+  };
 
+  if (res.data.Booking != null) {
+    const specialServices = res.data.Booking.SpecialServices;
+    const passengers = res.data.Booking.Passengers;
+    const seatMaps = res.data.Booking.SeatMaps;
+    const EMDTicketFareOptions = res.data.FareInfo.EMDTicketFareOptions;
+
+    dataPer.Passengers = passengers;
+    dataPer.SeatMaps = seatMaps;
+    dataPer.EMDTicketFareOptions = EMDTicketFareOptions;
+
+    for (const passenger of passengers) {
+      const special = {
+        fields: []
+      };
+
+      for (const service of specialServices) {
+        if (service.RefPassenger === passenger.Ref) {
+          const labels = await this.specialServiceCode.find({ Code: service.Code });
+
+          for (const label of labels) {
+            const myObj = {
+              Code: service.Code,
+              Text: service.Text,
+              Data: service.Data,
+              Label: label.Label
+            };
+            special.fields.push(myObj);
+          }
+        }
+      }
+      dataPer.PassengersDetails.push(special);
+    }
+  }
+
+  return dataPer;
+}
 export default SearchService;
 function split(arg0: string, value: any): any[] {
   throw new Error('Function not implemented.');
