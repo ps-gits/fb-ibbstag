@@ -1443,14 +1443,12 @@ class BookingService {
         dataModify.SeatMaps   = SeatMaps;
 
         if(method!='Cancel' && FareRules.length > 0){
-          const parentArray = [{
-            Text: FareRules[0].FareConditionText.Text,
-            Value: FareRules[0].FareConditionText.Value,
-            Children: parseChildren(FareRules[0].FareConditionText.Children),
+          dataModify.FareRules = FareRules.map(rule => ({
+            Text: rule.FareConditionText.Text,
+            Value: rule.FareConditionText.Value,
+            Children: parseChildren(rule.FareConditionText.Children),
             Extensions: null
-          }];
-
-          dataModify.FareRules   =  parentArray;
+          }));
 
           // const bagAllowances = await FareRules.map(fareRule => {
           //   const bagAllowance = fareRule.FareConditionText.Children.find(child => child.Text === "Bag allowance");
