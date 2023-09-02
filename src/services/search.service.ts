@@ -330,12 +330,11 @@ class SearchService {
     }
     var URL = API_URL+'SearchFlightsForExchange?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
     let RefETTicketFareAr = searchData.RefETTicketFare
-    const RefETTicketFare = Object.keys(RefETTicketFareAr).map(key => {
-      return {
-        RefETTicketFare: RefETTicketFareAr[key].RefETTicketFare,
-        Extensions: null
-      };
-    });
+      const RefETTicketFare =  RefETTicketFareAr.map(item => {
+      const RefETTicketFare = item.ETTicketFareTargets[0].RefETTicketFare;
+      const Extensions = item.Extensions;
+      return { RefETTicketFare, Extensions };
+     });
     const requestDataArray = OriginDestinationsArray.map(OriginDestinationsRes => {
       return { request: {
             UniqueID:{
@@ -454,6 +453,8 @@ class SearchService {
                   destinationArrivalDate: destinationArrivalDate,
                   destinationArrivalTime: destinationArrivalTime,
                   FlightNumber:seg.FlightInfo.FlightNumber,
+                  Stops:seg.FlightInfo.Stops,
+                  Remarks:seg.FlightInfo.Remarks,
                 };
                 const faireFmailiesOriginObjB = {
                   orginDepartureDate: orginDepartureDate,
@@ -468,6 +469,8 @@ class SearchService {
                   destinationArrivalDate: destinationArrivalDate,
                   destinationArrivalTime: destinationArrivalTime,
                   FlightNumber:seg.FlightInfo.FlightNumber,
+                  Stops:seg.FlightInfo.Stops,
+                  Remarks:seg.FlightInfo.Remarks,
                 };
                 const faireFmailiesOriginObjD = {
                   orginDepartureDate: orginDepartureDate,
@@ -482,6 +485,8 @@ class SearchService {
                   destinationArrivalDate: destinationArrivalDate,
                   destinationArrivalTime: destinationArrivalTime,
                   FlightNumber:seg.FlightInfo.FlightNumber,
+                  Stops:seg.FlightInfo.Stops,
+                  Remarks:seg.FlightInfo.Remarks,
                 };
               
                 faireFmailiesDelight.push(faireFmailiesOriginObjD);
@@ -512,6 +517,8 @@ class SearchService {
                   destinationArrivalDate: destinationArrivalDate ,
                   destinationArrivalTime: destinationArrivalTime,
                   FlightNumber:seg.FlightInfo.FlightNumber,
+                  Stops:seg.FlightInfo.Stops,
+                  Remarks:seg.FlightInfo.Remarks,
                 };
                 const faireFmailiesDestinationObjB = {
                   orginDepartureDate: orginDepartureDate,
@@ -526,6 +533,8 @@ class SearchService {
                   destinationArrivalDate: destinationArrivalDate ,
                   destinationArrivalTime: destinationArrivalTime,
                   FlightNumber:seg.FlightInfo.FlightNumber,
+                  Stops:seg.FlightInfo.Stops,
+                  Remarks:seg.FlightInfo.Remarks,
                 };
                 const faireFmailiesDestinationObjD = {
                   orginDepartureDate: orginDepartureDate,
@@ -540,6 +549,8 @@ class SearchService {
                   destinationArrivalDate: destinationArrivalDate ,
                   destinationArrivalTime: destinationArrivalTime,
                   FlightNumber:seg.FlightInfo.FlightNumber,
+                  Stops:seg.FlightInfo.Stops,
+                  Remarks:seg.FlightInfo.Remarks,
                 };
 
                 faireFmailiesDelight.push(faireFmailiesDestinationObjD);
@@ -1013,6 +1024,8 @@ class SearchService {
                   destinationArrivalDate: destinationArrivalDate,
                   destinationArrivalTime: destinationArrivalTime,
                   FlightNumber:seg.FlightInfo.FlightNumber,
+                  Stops:seg.FlightInfo.Stops,
+                  Remarks:seg.FlightInfo.Remarks,
                 };
 
                 const faireFmailiesOriginObjB = {
@@ -1028,6 +1041,8 @@ class SearchService {
                   destinationArrivalDate: destinationArrivalDate,
                   destinationArrivalTime: destinationArrivalTime,
                   FlightNumber:seg.FlightInfo.FlightNumber,
+                  Stops:seg.FlightInfo.Stops,
+                  Remarks:seg.FlightInfo.Remarks,
                 };
                 
                 const faireFmailiesOriginObjD = {
@@ -1043,6 +1058,8 @@ class SearchService {
                   destinationArrivalDate: destinationArrivalDate,
                   destinationArrivalTime: destinationArrivalTime,
                   FlightNumber:seg.FlightInfo.FlightNumber,
+                  Stops:seg.FlightInfo.Stops,
+                  Remarks:seg.FlightInfo.Remarks,
                 };
                 faireFmailiesDelight.push(faireFmailiesOriginObjD);
                 faireFmailiesBliss.push(faireFmailiesOriginObjB);
@@ -1073,6 +1090,8 @@ class SearchService {
                     destinationArrivalDate: destinationArrivalDate ,
                     destinationArrivalTime: destinationArrivalTime,
                     FlightNumber:seg.FlightInfo.FlightNumber,
+                    Stops:seg.FlightInfo.Stops,
+                    Remarks:seg.FlightInfo.Remarks,
                   };
 
                   const faireFmailiesDestinationObjB = {
@@ -1088,6 +1107,8 @@ class SearchService {
                     destinationArrivalDate: destinationArrivalDate ,
                     destinationArrivalTime: destinationArrivalTime,
                     FlightNumber:seg.FlightInfo.FlightNumber,
+                    Stops:seg.FlightInfo.Stops,
+                    Remarks:seg.FlightInfo.Remarks,
                   };
                  
                   const faireFmailiesDestinationObjD = {
@@ -1103,6 +1124,8 @@ class SearchService {
                     destinationArrivalDate: destinationArrivalDate ,
                     destinationArrivalTime: destinationArrivalTime,
                     FlightNumber:seg.FlightInfo.FlightNumber,
+                    Stops:seg.FlightInfo.Stops,
+                    Remarks:seg.FlightInfo.Remarks,
                   };
 
                   faireFmailiesDelight.push(faireFmailiesDestinationObjD);
@@ -1331,4 +1354,3 @@ export default SearchService;
 function split(arg0: string, value: any): any[] {
   throw new Error('Function not implemented.');
 }
-
