@@ -39,7 +39,11 @@ class SearchService {
       if(searchData.DateFlexible){  
         OriginDestinationsData0 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$lt:  formattedDate}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).sort({ Date: -1 }).limit(1);
         OriginDestinationsData1 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$eq:  formattedDate}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
-        OriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
+        if(OriginDestinationsData0.length==0){
+          OriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(2);
+        }else{
+          OriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
+        }
       }else{
         OriginDestinationsData1 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$eq:  formattedDate}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
       }
@@ -61,7 +65,11 @@ class SearchService {
       if(searchData.DateFlexible){
         RetunrOriginDestinationsData0 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$lt:  formattedDate1}, OriginCode:searchData.OriginDestinations[1].OriginCode, DestinationCode:searchData.OriginDestinations[1].DestinationCode}).sort({ Date: -1 }).limit(1);
         RetunrOriginDestinationsData1 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$eq:  formattedDate1}, OriginCode:searchData.OriginDestinations[1].OriginCode, DestinationCode:searchData.OriginDestinations[1].DestinationCode}).limit(1);
-        RetunrOriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate1}, OriginCode:searchData.OriginDestinations[1].OriginCode, DestinationCode:searchData.OriginDestinations[1].DestinationCode}).limit(1);
+        if(RetunrOriginDestinationsData0.length==0){
+          RetunrOriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate1}, OriginCode:searchData.OriginDestinations[1].OriginCode, DestinationCode:searchData.OriginDestinations[1].DestinationCode}).limit(2);
+        }else{
+          RetunrOriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate1}, OriginCode:searchData.OriginDestinations[1].OriginCode, DestinationCode:searchData.OriginDestinations[1].DestinationCode}).limit(1);
+        }
       }else{
         RetunrOriginDestinationsData1 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$eq:  formattedDate1}, OriginCode:searchData.OriginDestinations[1].OriginCode, DestinationCode:searchData.OriginDestinations[1].DestinationCode}).limit(1);
       }
@@ -72,7 +80,11 @@ class SearchService {
       if(searchData.DateFlexible){  
         OriginDestinationsData0 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$lt:  formattedDate2}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).sort({ Date: -1 }).limit(1);
         OriginDestinationsData1 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$eq:  formattedDate2}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
-        OriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate2}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
+        if(OriginDestinationsData0.length==0){
+          OriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate2}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(2);
+        }else{  
+          OriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate2}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
+        }
       }else{
         OriginDestinationsData1 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$eq:  formattedDate2}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
       }
@@ -127,6 +139,7 @@ class SearchService {
       return axios.post(URL, requestData);
     }); 
     try {
+
       const responses = await Promise.all(promises); 
         return this.Responce(responses,OriginDestinationsArray,searchData,currency,symbol,cpd_code);
       } catch (error) {
@@ -273,7 +286,11 @@ class SearchService {
       if(searchData.DateFlexible){  
         OriginDestinationsData0 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$lt:  formattedDate}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).sort({ Date: -1 }).limit(1);
         OriginDestinationsData1 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$eq:  formattedDate}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
-        OriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
+        if(OriginDestinationsData0.length==0){
+          OriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(2);
+        }else{
+          OriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
+        }
       }else{
         OriginDestinationsData1 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$eq:  formattedDate}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
       }
@@ -295,7 +312,11 @@ class SearchService {
       if(searchData.DateFlexible){
         RetunrOriginDestinationsData0 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$lt:  formattedDate1}, OriginCode:searchData.OriginDestinations[1].OriginCode, DestinationCode:searchData.OriginDestinations[1].DestinationCode}).sort({ Date: -1 }).limit(1);
         RetunrOriginDestinationsData1 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$eq:  formattedDate1}, OriginCode:searchData.OriginDestinations[1].OriginCode, DestinationCode:searchData.OriginDestinations[1].DestinationCode}).limit(1);
-        RetunrOriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate1}, OriginCode:searchData.OriginDestinations[1].OriginCode, DestinationCode:searchData.OriginDestinations[1].DestinationCode}).limit(1);
+        if(RetunrOriginDestinationsData0.length==0){
+          RetunrOriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate1}, OriginCode:searchData.OriginDestinations[1].OriginCode, DestinationCode:searchData.OriginDestinations[1].DestinationCode}).limit(2);
+        }else{
+          RetunrOriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate1}, OriginCode:searchData.OriginDestinations[1].OriginCode, DestinationCode:searchData.OriginDestinations[1].DestinationCode}).limit(1);
+        }
       }else{
         RetunrOriginDestinationsData1 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$eq:  formattedDate1}, OriginCode:searchData.OriginDestinations[1].OriginCode, DestinationCode:searchData.OriginDestinations[1].DestinationCode}).limit(1);
       }
@@ -306,7 +327,11 @@ class SearchService {
       if(searchData.DateFlexible){  
         OriginDestinationsData0 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$lt:  formattedDate2}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).sort({ Date: -1 }).limit(1);
         OriginDestinationsData1 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$eq:  formattedDate2}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
-        OriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate2}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
+        if(OriginDestinationsData0.length==0){
+          OriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate2}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(2);
+        }else{
+          OriginDestinationsData2 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$gt:  formattedDate2}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
+        }
       }else{
         OriginDestinationsData1 =  await this.eligibleOriginDestinations.find({ Date: { $ne: null,$eq:  formattedDate2}, OriginCode:searchData.OriginDestinations[0].OriginCode, DestinationCode:searchData.OriginDestinations[0].DestinationCode}).limit(1);
       }
