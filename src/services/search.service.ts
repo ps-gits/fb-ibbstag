@@ -433,8 +433,17 @@ class SearchService {
               const refWebClasses = originDestFares.map(fare => fare.RefWebClass);
               const areAllSame = refWebClasses.every(refWebClass => refWebClass === refWebClasses[0]);
               if(areAllSame){
-                refWebClassDict[refWebClasses[0]] = ticketFare.RefItinerary;
-                BagAllowances[refWebClasses[0]] = originDestFares;
+
+                const key = refWebClasses[0];
+                // Check if the key does not exist in refWebClassDict
+                if (!refWebClassDict.hasOwnProperty(key)) {
+                  refWebClassDict[key] = ticketFare.RefItinerary;
+                }
+                // Check if the key does not exist in BagAllowances
+                if (!BagAllowances.hasOwnProperty(key)) {
+                  BagAllowances[key] = originDestFares;
+                }
+
               }
             });
             for (const key in refWebClassDict) {
@@ -970,6 +979,7 @@ class SearchService {
       delight: [],
       bliss: [],
       opulence: [],
+      Res:[],
     }; 
 
     var OriginCode      =  searchData.OriginDestinations[0].OriginCode;
@@ -1005,10 +1015,18 @@ class SearchService {
             const refWebClasses = originDestFares.map(fare => fare.RefWebClass);
             const areAllSame = refWebClasses.every(refWebClass => refWebClass === refWebClasses[0]);
             if(areAllSame){
-              refWebClassDict[refWebClasses[0]] = ticketFare.RefItinerary;
-              BagAllowances[refWebClasses[0]] = originDestFares; 
+
+              const key = refWebClasses[0];
+              // Check if the key does not exist in refWebClassDict
+              if (!refWebClassDict.hasOwnProperty(key)) {
+                refWebClassDict[key] = ticketFare.RefItinerary;
+              }
+              // Check if the key does not exist in BagAllowances
+              if (!BagAllowances.hasOwnProperty(key)) {
+                BagAllowances[key] = originDestFares;
+              }
             }
-          });
+          }); 
           console.log('BagAllowances========1=',BagAllowances[1][0].CouponFares[0].BagAllowances);
           console.log('BagAllowances========2=',BagAllowances[2][0].CouponFares[0].BagAllowances);
           console.log('BagAllowances========3=',BagAllowances[3][0].CouponFares[0].BagAllowances);
@@ -1379,3 +1397,4 @@ export default SearchService;
 function split(arg0: string, value: any): any[] {
   throw new Error('Function not implemented.');
 }
+
