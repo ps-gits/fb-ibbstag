@@ -130,5 +130,22 @@ export const parseChildren = (children: any): any => {
 };
 
 
+/**
+ * @method formatDuration
+ * @param {minutes } length
+ * @returns {minutes} Html
+ * @description this value is Empty Check
+ */
+export const formatDuration = (minutes:any): any => {
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  const formattedDuration = `${hours}h ${remainingMinutes}m`; 
+  
+  return formattedDuration;
+}
+
+
  
  

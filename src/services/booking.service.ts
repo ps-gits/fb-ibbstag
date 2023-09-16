@@ -5,7 +5,7 @@ import { CreateBookingDto,CreateBookingExchangeDto,loadBookingDto,calendarDto,Mo
 import { HttpException } from '@exceptions/HttpException';
 import { Booking,LoadBooking,Calendar,Payment} from '@interfaces/booking.interface'; 
 import { Search } from '@interfaces/search.interface';
-import { isEmpty,formatDate,generateOrderNumber,formattedTime,localeDateString,parseChildren } from '@utils/util';
+import { isEmpty,formatDate,generateOrderNumber,formattedTime,localeDateString,parseChildren,formatDuration } from '@utils/util';
 import { API_URL,API_KEY} from '@config';
 import locationModel from '@models/location.model';
 import specialServiceCodeModel from '@models/specialServiceCode.model';
@@ -1535,9 +1535,14 @@ class BookingService {
                 "Luxury":Luxury,
                 "Lounge":Lounge,
                 "WebClass":secondCharacter,
-                "FlightNumber": Segments[seg].FlightInfo.FlightNumber,
+                "FlightNumber": Segments[seg].FlightInfo.OperatingAirlineDesignator+'-'+Segments[seg].FlightInfo.FlightNumber,
                 "Stops": Segments[seg].FlightInfo.Stops,
                 "Remarks":Segments[seg].FlightInfo.Remarks,
+                "Duration":formatDuration(Segments[seg].FlightInfo.DurationMinutes),
+                "Meal":'',
+                "Seat":'',
+                "Terminal":'',
+                "AircraftType":Segments[seg].FlightInfo.EquipmentText,
               };
               dataModify.OriginDestination.push(OriginDestination);
               dataModify.PnrInformation = PnrInformation;

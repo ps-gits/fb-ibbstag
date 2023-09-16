@@ -486,9 +486,14 @@ class SearchService {
                   destinationCity: destinationCity,
                   destinationArrivalDate: destinationArrivalDate,
                   destinationArrivalTime: destinationArrivalTime,
-                  FlightNumber:seg.FlightInfo.FlightNumber,
+                  FlightNumber: seg.FlightInfo.OperatingAirlineDesignator+'-'+seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
+                  Duration:seg.FlightInfo.DurationMinutes,
+                  Meal:'',
+                  Seat:'',
+                  Terminal:'',
+                  AircraftType:seg.FlightInfo.EquipmentText,
                 };
                 const faireFmailiesOriginObjB = {
                   orginDepartureDate: orginDepartureDate,
@@ -505,6 +510,11 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
+                  Duration:seg.FlightInfo.DurationMinutes,
+                  Meal:'',
+                  Seat:'',
+                  Terminal:'',
+                  AircraftType:seg.FlightInfo.EquipmentText,
                 };
                 const faireFmailiesOriginObjD = {
                   orginDepartureDate: orginDepartureDate,
@@ -521,6 +531,11 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
+                  Duration:seg.FlightInfo.DurationMinutes,
+                  Meal:'',
+                  Seat:'',
+                  Terminal:'',
+                  AircraftType:seg.FlightInfo.EquipmentText,
                 };
               
                 faireFmailiesDelight.push(faireFmailiesOriginObjD);
@@ -553,6 +568,11 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
+                  Duration:seg.FlightInfo.DurationMinutes,
+                  Meal:'',
+                  Seat:'',
+                  Terminal:'',
+                  AircraftType:seg.FlightInfo.EquipmentText,
                 };
                 const faireFmailiesDestinationObjB = {
                   orginDepartureDate: orginDepartureDate,
@@ -569,6 +589,12 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
+                  Duration:seg.FlightInfo.DurationMinutes,
+                  Meal:'',
+                  Seat:'',
+                  Terminal:'',
+                  AircraftType:seg.FlightInfo.EquipmentText,
+
                 };
                 const faireFmailiesDestinationObjD = {
                   orginDepartureDate: orginDepartureDate,
@@ -585,6 +611,11 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
+                  Duration:seg.FlightInfo.DurationMinutes,
+                  Meal:'',
+                  Seat:'',
+                  Terminal:'',
+                  AircraftType:seg.FlightInfo.EquipmentText,
                 };
 
                 faireFmailiesDelight.push(faireFmailiesDestinationObjD);
@@ -1069,6 +1100,11 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
+                  Duration:seg.FlightInfo.DurationMinutes,
+                  Meal:'',
+                  Seat:'',
+                  Terminal:'',
+                  AircraftType:seg.FlightInfo.EquipmentText,
                 };
 
                 const faireFmailiesOriginObjB = {
@@ -1086,6 +1122,11 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
+                  Duration:seg.FlightInfo.DurationMinutes,
+                  Meal:'',
+                  Seat:'',
+                  Terminal:'',
+                  AircraftType:seg.FlightInfo.EquipmentText,
                 };
                 
                 const faireFmailiesOriginObjD = {
@@ -1103,6 +1144,11 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
+                  Duration:seg.FlightInfo.DurationMinutes,
+                  Meal:'',
+                  Seat:'',
+                  Terminal:'',
+                  AircraftType:seg.FlightInfo.EquipmentText,
                 };
                 faireFmailiesDelight.push(faireFmailiesOriginObjD);
                 faireFmailiesBliss.push(faireFmailiesOriginObjB);
@@ -1135,6 +1181,11 @@ class SearchService {
                     FlightNumber:seg.FlightInfo.FlightNumber,
                     Stops:seg.FlightInfo.Stops,
                     Remarks:seg.FlightInfo.Remarks,
+                    Duration:seg.FlightInfo.DurationMinutes,
+                    Meal:'',
+                    Seat:'',
+                    Terminal:'',
+                    AircraftType:seg.FlightInfo.EquipmentText,
                   };
 
                   const faireFmailiesDestinationObjB = {
@@ -1152,6 +1203,11 @@ class SearchService {
                     FlightNumber:seg.FlightInfo.FlightNumber,
                     Stops:seg.FlightInfo.Stops,
                     Remarks:seg.FlightInfo.Remarks,
+                    Duration:seg.FlightInfo.DurationMinutes,
+                    Meal:'',
+                    Seat:'',
+                    Terminal:'',
+                    AircraftType:seg.FlightInfo.EquipmentText,
                   };
                  
                   const faireFmailiesDestinationObjD = {
@@ -1169,6 +1225,11 @@ class SearchService {
                     FlightNumber:seg.FlightInfo.FlightNumber,
                     Stops:seg.FlightInfo.Stops,
                     Remarks:seg.FlightInfo.Remarks,
+                    Duration:seg.FlightInfo.DurationMinutes,
+                    Meal:'',
+                    Seat:'',
+                    Terminal:'',
+                    AircraftType:seg.FlightInfo.EquipmentText,
                   };
 
                   faireFmailiesDelight.push(faireFmailiesDestinationObjD);
