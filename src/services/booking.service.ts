@@ -44,8 +44,8 @@ class BookingService {
           }
           };
 
-          
-          let dataModify : Booking = await this.Responce(requestData,'CreateBooking');
+          var marketingInfo = bookingData[0].PassengerDetails.marketingInfo;
+          let dataModify : Booking = await this.Responce(requestData,'CreateBooking',marketingInfo);
           resolve(dataModify);
       } catch (error) {
         reject(error);
@@ -1383,7 +1383,7 @@ class BookingService {
     return responce;
   }
   
-  async Responce(requestData: any,method:any): Promise<any> {
+  async Responce(requestData: any,method:any,marketingInfo:false): Promise<any> {
     var URL = API_URL+method+'?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
     let res =  await axios.post(URL, requestData);
 
@@ -1561,6 +1561,7 @@ class BookingService {
               destinationDate: localeDateString(Segments[0].FlightInfo.DepartureDate),	
               isTicket:false,
               email:email.Text,
+              marketingInfo:marketingInfo
             };	
           
             this.bookingHistory.insertMany(BookingHistory);

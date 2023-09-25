@@ -14,7 +14,8 @@ const bookingHistorySchema: Schema = new Schema({
     isTicket:{type:Boolean},
     transactionId: { type: String },
     cardNumber: { type: String },
-    cardHolderName: { type: String } 
+    cardHolderName: { type: String },
+    marketingInfo:{type:Boolean}
 }); 
 const bookingHistoryModel = model<BookingHistory & Document>('BookingHistory', bookingHistorySchema); 
 export default bookingHistoryModel;
