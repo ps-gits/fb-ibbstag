@@ -173,7 +173,8 @@ class SearchService {
       MealsDetails:[],
       Passengers:[],
       SeatMaps:[],
-      EMDTicketFareOptions:[]
+      EMDTicketFareOptions:[],
+      res:res.data
     };
     
     if(res.data.Passengers!=null){ 
@@ -1111,6 +1112,7 @@ class SearchService {
         let faireFmailiesOpulence = [];
         let faireFmailies = [];
         if(res.data.Passengers!=null){
+          data.Res = res.data;
           const Segments = res.data.Segments;
           const Itineraries = res.data.FareInfo.Itineraries
           let oriIncre = 0;

@@ -132,16 +132,19 @@ class BookingService {
       Passengers:[],
       SeatMaps:[],
       EMDTicketFareOptions:[],
-      cpd_code:""
+      cpd_code:"",
+      res:res.data 
+
     };
     if(res.data.Booking!=null){ 
       var SpecialServices   =  res.data.Booking.SpecialServices;
       var OptionalSpecialServices   =  res.data.OptionalSpecialServices;
-      var Passengers        = res.data.Booking.Passengers;
-      var SeatMaps          =  res.data.Booking.SeatMaps;
-      var EMDTicketFareOptionsArr =  res.data.FareInfo.EMDTicketFareOptions;
-      var ETTicketFares =   res.data.Booking.FareInfo.ETTicketFares; 
-      var EMDTicketFares =  res.data.Booking.FareInfo.EMDTicketFares; 
+      var Passengers                =  res.data.Booking.Passengers;
+      var SeatMaps                  =  res.data.Booking.SeatMaps;
+      var EMDTicketFareOptionsArr   =  res.data.FareInfo.EMDTicketFareOptions;
+      var ETTicketFares             =  res.data.Booking.FareInfo.ETTicketFares; 
+      var EMDTicketFares            =  res.data.Booking.FareInfo.EMDTicketFares; 
+      var SaleCurrencyCode          =  res.data.Booking.FareInfo.SaleCurrencyCode;
       var Segments = res.data.Booking.Segments;
       const refArray = Segments.filter(segment => segment.BookingClass.StatusCode === "HK").map(segment => segment.Ref);
       
@@ -200,6 +203,7 @@ class BookingService {
                   RefPassenger:Passengers[pass].Ref,
                   Data:'',
                   Text:'',
+                  SaleCurrencyCode:SaleCurrencyCode,
                   EMDTicketFareForBags:prepaidExcessBaggageVoucher,
                   BagAllowances:bagAllowancesArray[0],
                   EMDTicketFareForSports:prepaidExcessSportsVoucher
@@ -539,7 +543,7 @@ class BookingService {
       // Request For CTCH
       if(SpecialServicesObj.CTCH!=''){
         const CTCH = {
-          Text:SpecialServicesObj.CTCH,
+          Text:String(SpecialServicesObj.CTCH).replace(/\s/g, ''),
           RefPassenger: "Traveler_Type_1_Index_1",
           Code: "CTCH"
         } 
@@ -548,7 +552,7 @@ class BookingService {
       // Request For CTCM
       if(SpecialServicesObj.CTCM!=''){
         const CTCM = {
-          Text:SpecialServicesObj.CTCM,
+          Text:String(SpecialServicesObj.CTCM).replace(/\s/g, ''),
           RefPassenger: "Traveler_Type_1_Index_0",
           Code: "CTCM"
         } 
@@ -794,27 +798,80 @@ class BookingService {
 
   public async cabsBooking(prepareCancelBookingData: PrepareCancelBookingDto): Promise<Booking> {
     if (isEmpty(prepareCancelBookingData)) throw new HttpException(400, 'Prepare Additional Itinerary request Data is empty'); 
-    //var URL = API_URL+'PrepareCancel?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
-
-    const endpoint = '<endpoint>';
-    const clientId = '<client_id>';
-    const clientSecret = '<client_secret>';
-
+    //var URL = API_URL+'PrepareCancel?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat'; 
+    const endpoint = '<your_endpoint>';
+    const clientId = '<your_client_id>';
+    const clientSecret = '<your_client_secret>'; 
     const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     const headers = {
       'Authorization': `Basic ${authHeader}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     };
-
-    const data = 'grant_type=client_credentials';
-    let res =  await axios.post(endpoint, data, { headers })
-      .then(response => {
-        console.log('Access Token:', response.data.access_token);
-      })
-      .catch(error => {
-        console.error('Error:', error.message);
-      }); 
-    return res;
+    const requestData = JSON.stringify({
+              entitlement_type: "voucher",
+              coverage: {
+                type: "distance",
+                details: {
+                  valid_from: "2023-09-15",
+                  valid_until: "2023-12-31",
+                  value: 50,
+                  unit: "KM",
+                  redemption_limit: 2
+                }
+              },
+              services: [
+                {
+                  type: "ride",
+                  conditions: {
+                      categories: [
+                      "transfer"
+                    ],
+                    vehicle_classes: [
+                      "business_class",
+                      "business_van"
+                    ]
+                     
+                  }
+                }
+              ],
+              "booking": {
+                channel_type: "partner_web",
+                channel_id: "ABC1234567",
+                reference: "PNR123",
+                service_designator: "FLIGHT123",
+                class: "F",
+                guests: 1,
+                departure: "MUC",
+                arrival: "DXB",
+                start_date: "2023-10-01T00:00:00+00:00",
+                end_date: "2023-10-02T00:00:00+00:00"
+              },
+              "guest": {
+                lead: true,
+                children_ages: [
+                  6,
+                  8,
+                  10
+                ],
+                title: "mr",
+                first_name: "John",
+                last_name: "Doe",
+                email: "your@email.com",
+                mobile_phone_number: "+123456789",
+                age: 32,
+                membership_status: "platinum",
+                reduced_mobility: [
+                  "WCHR"
+                ],
+                check_in_luggage: 2,
+                carry_on_luggage: 2,
+                bulky_luggage: true
+              }
+            });
+     
+    let res =  await axios.post(URL, requestData,{ headers });
+    console.log('Access Token:', res.data.access_token);
+    return res.data;
   } 
   
   public async exchangeCreateBooking(bookingData: CreateBookingExchangeDto): Promise<Booking> {
@@ -829,9 +886,6 @@ class BookingService {
           const Extensions = item.Extensions;
           return { RefETTicketFare, Extensions,CouponOrders };
         });
-
-//resolve(RefETTicketFare);
-         
         const requestData = {
           request: { 
             UniqueID:{
@@ -1594,9 +1648,10 @@ class BookingService {
         var  Segments         = response.Segments;
         var  ETTicketFares    = response.FareInfo.ETTicketFares;
         var  EMDTicketFares   = response.FareInfo.EMDTicketFares;
+        var  SaleCurrencyCode = response.FareInfo.SaleCurrencyCode;
         var  RefETTicketFare  = response.MiscInfo.ExchangeableOriginDestinations;
         var  SeatMaps         = response.SeatMaps;
-        var  FareRules         = response.FareInfo.FareRules;
+        var  FareRules        = response.FareInfo.FareRules;
         dataModify.SeatMaps   = SeatMaps;
          const CheckCabs = EMDTicketFares.find(item => item.AssociatedSpecialServiceCode === "ASVC");
          if (CheckCabs) {
@@ -1640,7 +1695,8 @@ class BookingService {
           "TotalAmount": SaleCurrencyAmountTotal.TotalAmount,
           "MilesAmount": SaleCurrencyAmountTotal.MilesAmount,
           "SeatAmount": totalSeatAmountSum,
-          "Extensions": null
+          "Extensions": null,
+          "SaleCurrencyCode":SaleCurrencyCode,
         };
           dataModify.Amount = Amount; 
           dataModify.RefETTicketFare = RefETTicketFare;
