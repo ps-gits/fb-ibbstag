@@ -1,12 +1,11 @@
 import { API_URL,API_KEY} from '@config';
 import { HttpException } from '@exceptions/HttpException';
-import { Location,EligibleOriginDestinations,AllowedOriginDestinations,AirLineDetails,CivilityDetails} from '@interfaces/cron.interface';
+import { Location,EligibleOriginDestinations,AllowedOriginDestinations,AirLineDetails } from '@interfaces/cron.interface';
 import locationModel from '@models/location.model';
 import specialServiceCodeModel from '@models/specialServiceCode.model';
 import eligibleOriginDestinationsModel from '@models/eligibleOriginDestinations.model'; 
 import allowedOriginDestinationsModel from '@models/allowedOriginDestinations.model';
 import airLineDetailsModel from '@models/airLineDetails.model';
-import civilityDetailsModel from '@models/civilityDetails.model';
 import { length } from 'class-validator';
 const axios = require('axios');
 const fs = require('fs');
@@ -142,7 +141,15 @@ class CronService {
       console.log(result.deletedCount + " documents deleted."); 
     }) 
     this.specialServiceCode.insertMany(data2.Codes);
-    return setEligibleOriginDestinationsData; 
+  // const modifiedData = setEligibleOriginDestinationsData.map((item) => {
+  //   if (item.TargetDate !== null) {
+  //     const dateInMs = parseInt(item.TargetDate.substring(6, 19));
+  //     item.TargetDate = new Date(dateInMs).toISOString();
+      
+  //   }
+  //   return item;
+  // });
+  return setEligibleOriginDestinationsData; 
   } 
   public async SetAllowedOriginDestinations(): Promise<AllowedOriginDestinations[]> {
 
@@ -184,6 +191,7 @@ class CronService {
     };
     let res =  await axios.post(URL, requestData);
     let data = res.data;
+    console.log(data);
     if (!data) throw new HttpException(409, `Something Missing, Data not found`);
     this.airLineDetails.deleteMany({}, (err, result) => {
       if (err) {
@@ -193,30 +201,6 @@ class CronService {
     });
     const setAirLineDetailsData: AirLineDetails[] = await this.airLineDetails.insertMany(data);
     return setAirLineDetailsData; 
-  } 
-
-  public async SetCivility(): Promise<CivilityDetails[]> {
-    try {
-      var URL = API_URL+'GetValueCodes';
-      const requestData = {
-        request: {
-          RequestInfo: {
-            AuthenticationKey: API_KEY,
-            CultureName: 'en-GB'
-          },
-          ValueCodeName:"Civility",
-          Extension: null
-        }
-      };
-      let res =  await axios.post(URL, requestData);
-      let data = res.data;
-      if (!data) throw new HttpException(409, `Something Missing, Data not found`);
-      const deleteResult = await this.civility.deleteMany({});
-      const setCivilityDetailsData: CivilityDetails[] = await this.civility.insertMany(data);
-      return setCivilityDetailsData; 
-    } catch (error) { 
-      throw new HttpException(400,'This account not found.'); 
-    }
   } 
    
   

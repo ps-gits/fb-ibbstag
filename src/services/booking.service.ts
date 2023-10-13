@@ -44,7 +44,7 @@ class BookingService {
           }
           };
 
-          var marketingInfo = bookingData[0].PassengerDetails.marketingInfo;
+          var marketingInfo = bookingData.booking[0].PassengerDetails.marketingInfo;
           let dataModify : Booking = await this.Responce(requestData,'CreateBooking',marketingInfo);
           resolve(dataModify);
       } catch (error) {
@@ -79,6 +79,7 @@ class BookingService {
             Extensions: null
           }
         };
+        //resolve(requestData);
         let dataModify : Booking = await this.Responce(requestData,'ModifyBooking');
         resolve(dataModify);
       } catch (error) {
@@ -139,7 +140,7 @@ class BookingService {
       var Passengers        = res.data.Booking.Passengers;
       var SeatMaps          =  res.data.Booking.SeatMaps;
       var EMDTicketFareOptionsArr =  res.data.FareInfo.EMDTicketFareOptions;
-
+      var ETTicketFares =   res.data.Booking.FareInfo.ETTicketFares; 
       var EMDTicketFares =  res.data.Booking.FareInfo.EMDTicketFares; 
       var Segments = res.data.Booking.Segments;
       const refArray = Segments.filter(segment => segment.BookingClass.StatusCode === "HK").map(segment => segment.Ref);
@@ -163,7 +164,50 @@ class BookingService {
       dataPer.cpd_code    = cpd_code; 
       dataPer.Passengers    = Passengers; 
       dataPer.SeatMaps = SeatMaps;
+
+      const prepaidExcessBaggageVoucher = EMDTicketFareOptionsArr.find(item => item.AssociatedSpecialServiceCode === "EXBG");
+
+      const prepaidExcessSportsVoucher = EMDTicketFareOptionsArr.find(item => item.AssociatedSpecialServiceCode === "SPEQ");
+      
+
       for (const  pass in Passengers) {
+
+
+        if (prepaidExcessBaggageVoucher) {
+          const appliableRefSegments = prepaidExcessBaggageVoucher.AppliableRefSegments;
+
+          if (Array.isArray(appliableRefSegments)) {
+              dataPer.Passengers[pass].bags = []; 
+              for (let i = 0; i < appliableRefSegments.length; i++) {
+                const bagAllowancesArray = await Promise.all(ETTicketFares.map((item) => {
+                  const couponFare = item.OriginDestinationFares.find((fare) =>
+                    fare.CouponFares.some((fare2) =>
+                      appliableRefSegments[i] === fare2.RefSegment
+                    )
+                  );
+
+                  if (couponFare) {
+                    return couponFare.CouponFares[0].BagAllowances[0];
+                  } else {
+                    return null; // If no match is found, you can choose to return null or some default value
+                  }
+                }));
+
+                let bagObj = { 
+                  Label:prepaidExcessBaggageVoucher.Label,
+                  Code :prepaidExcessBaggageVoucher.AssociatedSpecialServiceCode,
+                  RefSegment: appliableRefSegments[i],
+                  RefPassenger:Passengers[pass].Ref,
+                  Data:'',
+                  Text:'',
+                  EMDTicketFareForBags:prepaidExcessBaggageVoucher,
+                  BagAllowances:bagAllowancesArray[0],
+                  EMDTicketFareForSports:prepaidExcessSportsVoucher
+                };
+                dataPer.Passengers[pass].bags.push(bagObj); 
+            }
+          }
+        } 
         let special = {
           fields:[]
         };
@@ -747,6 +791,31 @@ class BookingService {
     }
     return data;
   } 
+
+  public async cabsBooking(prepareCancelBookingData: PrepareCancelBookingDto): Promise<Booking> {
+    if (isEmpty(prepareCancelBookingData)) throw new HttpException(400, 'Prepare Additional Itinerary request Data is empty'); 
+    //var URL = API_URL+'PrepareCancel?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
+
+    const endpoint = '<endpoint>';
+    const clientId = '<client_id>';
+    const clientSecret = '<client_secret>';
+
+    const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const headers = {
+      'Authorization': `Basic ${authHeader}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+
+    const data = 'grant_type=client_credentials';
+    let res =  await axios.post(endpoint, data, { headers })
+      .then(response => {
+        console.log('Access Token:', response.data.access_token);
+      })
+      .catch(error => {
+        console.error('Error:', error.message);
+      }); 
+    return res;
+  } 
   
   public async exchangeCreateBooking(bookingData: CreateBookingExchangeDto): Promise<Booking> {
     if (isEmpty(bookingData)) throw new HttpException(400, 'booking request Data is empty'); 
@@ -830,8 +899,8 @@ class BookingService {
         <input type="hidden" name="response-content-type" value="2">
         <input type="hidden" name="txntype" value="1">
         <input type="hidden" name="hmac" value="`+saltHash+`">
-        <input type="hidden" name="accept-url" value="https://flightbooking-sitecore-pratiksde-gmailcom.vercel.app/api/paymentaccept"> <!-- Merchant's Browser URL -->
-        <input type="hidden" name="cancel-url" value="https://flightbooking-sitecore-pratiksde-gmailcom.vercel.app/api/paymentcancel"> <!-- Merchant's Browser URL -->
+        <input type="hidden" name="accept-url" value="https://fe-flight-booking.vercel.app/api/paymentaccept"> <!-- Merchant's Browser URL -->
+        <input type="hidden" name="cancel-url" value="https://fe-flight-booking.vercel.app/api/paymentcancel"> <!-- Merchant's Browser URL -->
         <input type="hidden" name="callback-url" value="https://flight.manageprojects.in/paymentCheck"> <!-- Merchant's Server URL -->
          
       </form>
@@ -1090,6 +1159,82 @@ class BookingService {
 
     var MealsDeparture  =  bookingData.MealsDetails.departure;
     var MealsArrival    =  bookingData.MealsDetails.arrival; 
+    var BaggageDeparture  =  '';
+    var BaggageArrival    = '';
+    if(method =='ModifyBooking')
+    {
+      var BaggageDeparture  =  bookingData.BaggageDetails.departure;
+      var BaggageArrival    =  bookingData.BaggageDetails.arrival;
+       // Request For Ancillary
+      if(BaggageDeparture.length > 0){
+        BaggageDeparture.forEach((bags) => {
+          for (let i = 0; i < bags.ExcessBaggageWeight; i++) {
+            const BAG = {
+              RefPassenger: bags.RefPassenger,
+              RefSegment: bags.RefSegment,
+              Label: bags.RefPassenger,
+              AssociatedSpecialServiceCode: bags.Code,
+              AncillaryCode: bags.EMDTicketFareForBags.AncillaryCode,
+              ServiceTypeCode: bags.EMDTicketFareForBags.ServiceTypeCode,
+              RefItinerary:bags.EMDTicketFareForBags.RefItinerary,
+              Ref: bags.EMDTicketFareForBags.Ref,
+              SaleCurrencyAmount:bags.EMDTicketFareForBags.SaleCurrencyAmount
+            }
+            FareInfo.EMDTicketFares.push(BAG);
+          }
+
+          for (let i = 0; i < bags.SportsEquipment; i++) {
+            const BAG = {
+              RefPassenger: bags.RefPassenger,
+              RefSegment: bags.RefSegment,
+              Label: bags.RefPassenger,
+              AssociatedSpecialServiceCode: bags.Code,
+              AncillaryCode: bags.EMDTicketFareForSports.AncillaryCode,
+              ServiceTypeCode: bags.EMDTicketFareForSports.ServiceTypeCode,
+              RefItinerary:bags.EMDTicketFareForSports.RefItinerary,
+              Ref: bags.EMDTicketFareForSports.Ref,
+              SaleCurrencyAmount:bags.EMDTicketFareForSports.SaleCurrencyAmount
+            }
+            FareInfo.EMDTicketFares.push(BAG);
+          }  
+        }); 
+      }
+      
+      if(BaggageArrival.length > 0){
+        BaggageArrival.forEach((bags) => {
+          for (let i = 0; i < bags.ExcessBaggageWeight; i++) {
+       
+            const BAG = {
+              RefPassenger: bags.RefPassenger,
+              RefSegment: bags.RefSegment,
+              Label: bags.RefPassenger,
+              AssociatedSpecialServiceCode: bags.Code,
+              AncillaryCode: bags.EMDTicketFareForBags.AncillaryCode,
+              ServiceTypeCode: bags.EMDTicketFareForBags.ServiceTypeCode,
+              RefItinerary:bags.EMDTicketFareForBags.RefItinerary,
+              Ref: bags.EMDTicketFareForBags.Ref,
+              SaleCurrencyAmount:bags.EMDTicketFareForBags.SaleCurrencyAmount
+            }
+            FareInfo.EMDTicketFares.push(BAG);
+          }
+          for (let i = 0; i < bags.SportsEquipment; i++) {
+       
+            const BAG = {
+              RefPassenger: bags.RefPassenger,
+              RefSegment: bags.RefSegment,
+              Label: bags.RefPassenger,
+              AssociatedSpecialServiceCode: bags.Code,
+              AncillaryCode: bags.EMDTicketFareForSports.AncillaryCode,
+              ServiceTypeCode: bags.EMDTicketFareForSports.ServiceTypeCode,
+              RefItinerary:bags.EMDTicketFareForSports.RefItinerary,
+              Ref: bags.EMDTicketFareForSports.Ref,
+              SaleCurrencyAmount:bags.EMDTicketFareForSports.SaleCurrencyAmount
+            }
+            FareInfo.EMDTicketFares.push(BAG);
+          }  
+        }); 
+      } 
+    }  
 
     // Request For Ancillary
     // if(AncillaryData.length > 0){
@@ -1120,8 +1265,8 @@ class BookingService {
         } 
         SpecialServices.push(MEALS);
       });
-      
     } 
+    
     // Request For Meal
     if(MealsDeparture.length > 0){
       MealsDeparture.forEach((meal) => {
@@ -1134,71 +1279,75 @@ class BookingService {
         SpecialServices.push(MEALS);
       });
     } 
-    // Request For SEAT
-    if(SeatMapArrival.length > 0){
-      SeatMapArrival.forEach((seat) => {
-        const SEAT = {
-          Data: {
-            Seat: {
-              SeatRow: seat.RowNumber,
-              SeatLetter: seat.Letter
-            }
-          },
-          RefPassenger:seat.RefPassenger,
-          RefSegment: seat.RefSegment,
-          Code: "SEAT"
-        } 
-        SpecialServices.push(SEAT);
- 
-
-        const filteredData = bookingData.EMDTicketFareOptions.filter((item) => {
-          return  item.AncillaryCode === seat.AssociatedAncillaryCode;
-        }).map((item) => {
-          // Add more key-value pairs to each item
-          return {
-            ...item,
-            RefPassenger:seat.RefPassenger,
-            RefSegment: seat.RefSegment,
-            // Add more key-value pairs as needed
-          };
-        });
-        FareInfo.EMDTicketFares.push(filteredData[0])
-      });
-      
-    } 
-    // Request For SEAT
-    if(SeatMapDeparture.length > 0){
-      SeatMapDeparture.forEach((seat) => {
-        const SEAT = {
-          Data: {
-            Seat: {
-              SeatRow: seat.RowNumber,
-              SeatLetter: seat.Letter
-            }
-          },
-          RefPassenger:seat.RefPassenger,
-          RefSegment: seat.RefSegment,
-          Code: "SEAT"
-        } 
-        SpecialServices.push(SEAT);
-        const filteredData = bookingData.EMDTicketFareOptions.filter((item) => {
-          return  item.AncillaryCode === seat.AssociatedAncillaryCode;
-        }).map((item) => {
-          // Add more key-value pairs to each item
-          return {
-            ...item,
-            RefPassenger:seat.RefPassenger,
-            RefSegment: seat.RefSegment,
-            // Add more key-value pairs as needed
-          };
-        });
-        FareInfo.EMDTicketFares.push(filteredData[0])
-      });
-      
-    }              
-    // Make Request for sending
-    if(method =='CreateBooking')
+     
+    if(BaggageDeparture == '' || BaggageArrival=='') 
     {
+      // Request For SEAT
+      if(SeatMapArrival.length > 0){
+        SeatMapArrival.forEach((seat) => {
+          const SEAT = {
+            Data: {
+              Seat: {
+                SeatRow: seat.RowNumber,
+                SeatLetter: seat.Letter
+              }
+            },
+            RefPassenger:seat.RefPassenger,
+            RefSegment: seat.RefSegment,
+            Code: "SEAT"
+          } 
+          SpecialServices.push(SEAT);
+   
+
+          const filteredData = bookingData.EMDTicketFareOptions.filter((item) => {
+            return  item.AncillaryCode === seat.AssociatedAncillaryCode;
+          }).map((item) => {
+            // Add more key-value pairs to each item
+            return {
+              ...item,
+              RefPassenger:seat.RefPassenger,
+              RefSegment: seat.RefSegment,
+              // Add more key-value pairs as needed
+            };
+          });
+          FareInfo.EMDTicketFares.push(filteredData[0])
+        });
+        
+      } 
+      // Request For SEAT
+      if(SeatMapDeparture.length > 0){
+        SeatMapDeparture.forEach((seat) => {
+          const SEAT = {
+            Data: {
+              Seat: {
+                SeatRow: seat.RowNumber,
+                SeatLetter: seat.Letter
+              }
+            },
+            RefPassenger:seat.RefPassenger,
+            RefSegment: seat.RefSegment,
+            Code: "SEAT"
+          } 
+          SpecialServices.push(SEAT);
+          const filteredData = bookingData.EMDTicketFareOptions.filter((item) => {
+            return  item.AncillaryCode === seat.AssociatedAncillaryCode;
+          }).map((item) => {
+            // Add more key-value pairs to each item
+            return {
+              ...item,
+              RefPassenger:seat.RefPassenger,
+              RefSegment: seat.RefSegment,
+              // Add more key-value pairs as needed
+            };
+          });
+          FareInfo.EMDTicketFares.push(filteredData[0])
+        });
+        
+      }
+    }    
+                
+    // Make Request for sending
+    
       for (const  key in obj) { 
         var PassengerDetailsObj = obj[key].PassengerDetails;
         var SpecialServicesObj = obj[key].SpecialServices;
@@ -1219,162 +1368,171 @@ class BookingService {
           
         };
         Passengers.push(newPassengerObjs);
-        
-        // For Special Services DOB
-        if(SpecialServicesObj.EXTADOB){
-          const Dob = {
-              Data: {
-                Adof: {
-                  DateOfBirth: SpecialServicesObj.EXTADOB
-                },
-                Fields: [
-                  "DateOfBirth"
-                ]
-              },
-              RefPassenger: RefPassenger,
-              Code: "EXT-ADOB"
-            }
-          
-          SpecialServices.push(Dob);
-        }
-        // Request For CTCE
-        if(SpecialServicesObj.CTCE){
-          const CTCE = {
-            Text:SpecialServicesObj.CTCE,
-            RefPassenger:RefPassenger,
-            Code: "CTCE"
-          } 
-          SpecialServices.push(CTCE);
-        }
-        // Request For CTCH
-        if(SpecialServicesObj.CTCH){
-          const CTCH = {
-            Text:SpecialServicesObj.CTCH,
-            RefPassenger: RefPassenger,
-            Code: "CTCH"
-          } 
-          SpecialServices.push(CTCH);
-        }  
-        // Request For CTCM
-        if(SpecialServicesObj.CTCM){
-          const CTCM = {
-            Text:SpecialServicesObj.CTCM,
-            RefPassenger: RefPassenger,
-            Code: "CTCM"
-          } 
-          SpecialServices.push(CTCM);
-        }  
-        // Request For CHLD
-        if(SpecialServicesObj.CHLD){
-          const CHLD = {
-              Data: {
-                Chld: {
-                  DateOfBirth: SpecialServicesObj.CHLD
-                },
-                Fields: [
-                  "DateOfBirth"
-                ]
-              },
-              RefPassenger: RefPassenger,
-              Code: "CHLD"
-            }
-          
-          SpecialServices.push(CHLD);
-        }
-        
-        // Request For BAGR
-        if(SpecialServicesObj.BAGR){
-          const BAGR = {
-            Text:SpecialServicesObj.BAGR,
-            RefPassenger:RefPassenger,
-            Code: "BAGR"
-          } 
-          SpecialServices.push(BAGR);
-        }  
-        // Request For INFT
-        if(SpecialServicesObj.INFT){
-          const INFT = {
-            Text:SpecialServicesObj.INFT,
-            RefPassenger:RefPassenger,
-            Code: "INFT"
-          } 
-          SpecialServices.push(INFT);
-        } 
-        // Request For UMNR
-        if(SpecialServicesObj.UMNR){
-          const UMNR = {
-            Text:SpecialServicesObj.UMNR,
-            RefPassenger:RefPassenger,
-            Code: "UMNR"
-          } 
-          SpecialServices.push(UMNR);
-        }  
-        // Request For CTCF
-        if(SpecialServicesObj.CTCF){
-          const CTCF = {
-            Text:SpecialServicesObj.CTCF,
-            RefPassenger:RefPassenger,
-            Code: "CTCF"
-          } 
-          SpecialServices.push(CTCF);
-        }  
-        // Request For FOID
-        if(SpecialServicesObj.FOID){
-          const FOID = {
-            Text:SpecialServicesObj.FOID,
-            RefPassenger:RefPassenger,
-            Code: "FOID"
-          } 
-          SpecialServices.push(FOID);
-        } 
-        
-        // Request For DOCA
-        if(SpecialServicesObj.DOCA){
-          const DOCA = {
-            Text:SpecialServicesObj.DOCA,
-            RefPassenger:RefPassenger,
-            Code: "DOCA"
-          } 
-          SpecialServices.push(DOCA);
-        } 
-        // Request For PCTC
-        if(SpecialServicesObj.PCTC){
-          const PCTC = {
-            Text:SpecialServicesObj.PCTC,
-            RefPassenger:RefPassenger,
-            Code: "PCTC"
-          } 
-          SpecialServices.push(PCTC);
-        } 
 
-        // Request For EXTECTC
-        if(SpecialServicesObj.EXTECTC){
-          const EXTECTC = {
-            Text:SpecialServicesObj.EXTECTC,
-            RefPassenger:RefPassenger,
-            Code: "EXTECTC"
+         // Request For CTCH
+          if(SpecialServicesObj.CTCH){
+            const CTCH = {
+              Text:SpecialServicesObj.CTCH,
+              RefPassenger: RefPassenger,
+              Code: "CTCH"
+            } 
+            SpecialServices.push(CTCH);
+          }  
+          // Request For CTCM
+          if(SpecialServicesObj.CTCM){
+            const CTCM = {
+              Text:SpecialServicesObj.CTCM,
+              RefPassenger: RefPassenger,
+              Code: "CTCM"
+            } 
+            SpecialServices.push(CTCM);
           } 
-          SpecialServices.push(EXTECTC);
-        }
-        // if(DocumentsObj){
-        //   const DOC =  {
-        //     Data: {
-        //       Docs: {
-        //         "Documents":DocumentsObj  
-        //       },
-        //       Fields: [
-        //         "Documents[0].DocumentTypeCode",
-        //         "Documents[0].DocumentNumber",
-        //         "Documents[0].NationalityCountryCode"
-        //       ]
-        //     },
-        //     RefPassenger:RefPassenger,
-        //     Code: "DOCS"
-        //   }
-        //   SpecialServices.push(DOC);
-        // }
+
+           // Request For CTCE
+          if(SpecialServicesObj.CTCE){
+            const CTCE = {
+              Text:SpecialServicesObj.CTCE,
+              RefPassenger:RefPassenger,
+              Code: "CTCE"
+            } 
+            SpecialServices.push(CTCE);
+          }
+          
+        if(method =='CreateBooking')
+        {
+          // For Special Services DOB
+          if(SpecialServicesObj.EXTADOB){
+            const Dob = {
+                Data: {
+                  Adof: {
+                    DateOfBirth: SpecialServicesObj.EXTADOB
+                  },
+                  Fields: [
+                    "DateOfBirth"
+                  ]
+                },
+                RefPassenger: RefPassenger,
+                Code: "EXT-ADOB"
+              }
+            
+            SpecialServices.push(Dob);
+          }
+         
+          
+          // Request For CHLD
+          if(SpecialServicesObj.CHLD){
+            const CHLD = {
+                Data: {
+                  Chld: {
+                    DateOfBirth: SpecialServicesObj.CHLD
+                  },
+                  Fields: [
+                    "DateOfBirth"
+                  ]
+                },
+                RefPassenger: RefPassenger,
+                Code: "CHLD"
+              }
+            
+            SpecialServices.push(CHLD);
+          }
+          
+          // Request For BAGR
+          if(SpecialServicesObj.BAGR){
+            const BAGR = {
+              Text:SpecialServicesObj.BAGR,
+              RefPassenger:RefPassenger,
+              Code: "BAGR"
+            } 
+            SpecialServices.push(BAGR);
+          }  
+          // Request For INFT
+          if(SpecialServicesObj.INFT){
+            const INFT = {
+              Text:SpecialServicesObj.INFT,
+              RefPassenger:RefPassenger,
+              Code: "INFT"
+            } 
+            SpecialServices.push(INFT);
+          } 
+          // Request For UMNR
+          if(SpecialServicesObj.UMNR){
+            const UMNR = {
+              Text:SpecialServicesObj.UMNR,
+              RefPassenger:RefPassenger,
+              Code: "UMNR"
+            } 
+            SpecialServices.push(UMNR);
+          }  
+          // Request For CTCF
+          if(SpecialServicesObj.CTCF){
+            const CTCF = {
+              Text:SpecialServicesObj.CTCF,
+              RefPassenger:RefPassenger,
+              Code: "CTCF"
+            } 
+            SpecialServices.push(CTCF);
+          }  
+          // Request For FOID
+          if(SpecialServicesObj.FOID){
+            const FOID = {
+              Text:SpecialServicesObj.FOID,
+              RefPassenger:RefPassenger,
+              Code: "FOID"
+            } 
+            SpecialServices.push(FOID);
+          } 
+          
+          // Request For DOCA
+          if(SpecialServicesObj.DOCA){
+            const DOCA = {
+              Text:SpecialServicesObj.DOCA,
+              RefPassenger:RefPassenger,
+              Code: "DOCA"
+            } 
+            SpecialServices.push(DOCA);
+          } 
+          // Request For PCTC
+          if(SpecialServicesObj.PCTC){
+            const PCTC = {
+              Text:SpecialServicesObj.PCTC,
+              RefPassenger:RefPassenger,
+              Code: "PCTC"
+            } 
+            SpecialServices.push(PCTC);
+          } 
+
+          // Request For EXTECTC
+          if(SpecialServicesObj.EXTECTC){
+            const EXTECTC = {
+              Text:SpecialServicesObj.EXTECTC,
+              RefPassenger:RefPassenger,
+              Code: "EXTECTC"
+            } 
+            SpecialServices.push(EXTECTC);
+          }
+
+
+          // if(DocumentsObj){
+          //   const DOC =  {
+          //     Data: {
+          //       Docs: {
+          //         "Documents":DocumentsObj  
+          //       },
+          //       Fields: [
+          //         "Documents[0].DocumentTypeCode",
+          //         "Documents[0].DocumentNumber",
+          //         "Documents[0].NationalityCountryCode"
+          //       ]
+          //     },
+          //     RefPassenger:RefPassenger,
+          //     Code: "DOCS"
+          //   }
+          //   SpecialServices.push(DOC);
+          // }
+        }  
       }
-    }  
+      
     const responce = {
         SpecialServices: SpecialServices,
         FareInfo:FareInfo,
@@ -1396,12 +1554,16 @@ class BookingService {
       RefETTicketFare:[],
       SeatMaps:[],
       FareRules:{},
+      IsCabBooking:false,
       Res:res.data
     };
+    //return dataModify;
     if(res.data.Booking != null){
         let response  = res.data.Booking;
         var  SpecialServices   = response.SpecialServices;
         var  Passengers        = response.Passengers; 
+
+
         for (const  pass in Passengers) {
           let special = {
             fields:[]
@@ -1436,7 +1598,10 @@ class BookingService {
         var  SeatMaps         = response.SeatMaps;
         var  FareRules         = response.FareInfo.FareRules;
         dataModify.SeatMaps   = SeatMaps;
-
+         const CheckCabs = EMDTicketFares.find(item => item.AssociatedSpecialServiceCode === "ASVC");
+         if (CheckCabs) {
+          dataModify.IsCabBooking = true;
+         }
         if(method!='Cancel' && FareRules.length > 0){
           dataModify.FareRules = FareRules.map(rule => ({
             Text: rule.FareConditionText.Text,

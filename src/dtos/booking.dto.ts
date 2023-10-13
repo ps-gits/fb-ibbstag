@@ -53,6 +53,11 @@ export class MealsDetails {
   public arrival: any[];
   public departure: any[];
 }
+export class BaggegeDetails {
+  public arrival: any[];
+  public departure: any[];
+}
+ 
  
 export class CreateBookingDto {
   @ArrayUnique()
@@ -127,6 +132,10 @@ export class ModifyBookingDto {
   public SeatMap:SeatMap; 
   @IsObject()
   public MealsDetails:MealsDetails;
+
+  @IsObject()
+  public BaggageDetails:BaggageDetails;
+
   @ArrayUnique()
   public EMDTicketFareOptions: EMDTicketFareOptions[]; 
     

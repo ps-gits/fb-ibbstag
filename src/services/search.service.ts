@@ -181,11 +181,52 @@ class SearchService {
       var OptionalSpecialServices   =  res.data.OptionalSpecialServices;
       var Passengers        =  res.data.Passengers;
       var SeatMaps          =  res.data.SeatMaps;
-      var EMDTicketFareOptions          =  res.data.FareInfo.EMDTicketFareOptions;
+      var EMDTicketFareOptions  =  res.data.FareInfo.EMDTicketFareOptions;
+      var ETTicketFares         =  res.data.FareInfo.ETTicketFares;
       dataPer.Passengers    =  Passengers;
       dataPer.SeatMaps = SeatMaps;
       dataPer.EMDTicketFareOptions = EMDTicketFareOptions;
-      for (const  pass in Passengers) {
+
+      const prepaidExcessBaggageVoucher = EMDTicketFareOptions.find(item => item.AssociatedSpecialServiceCode === "EXBG");
+      
+      for (const  pass in Passengers) { 
+
+        if (prepaidExcessBaggageVoucher) {
+          const appliableRefSegments  = prepaidExcessBaggageVoucher.AppliableRefSegments;
+          if (Array.isArray(appliableRefSegments)) {
+            dataPer.Passengers[pass].bags = []; 
+            for (let i = 0; i < appliableRefSegments.length; i++) {
+ 
+                const bagAllowancesArray = await Promise.all(ETTicketFares.map((item) => {
+                  const couponFare = item.OriginDestinationFares.find((fare) =>
+                    fare.CouponFares.some((fare2) =>
+                      appliableRefSegments[i] === fare2.RefSegment
+                    )
+                  );
+
+                  if (couponFare) {
+                    return couponFare.CouponFares[0].BagAllowances[0];
+                  } else {
+                    return null; // If no match is found, you can choose to return null or some default value
+                  }
+                }));
+              
+
+               
+              let bagObj = { 
+                Label:prepaidExcessBaggageVoucher.Label,
+                Code :prepaidExcessBaggageVoucher.AssociatedSpecialServiceCode,
+                RefSegment: appliableRefSegments[i],
+                RefPassenger:Passengers[pass].Ref,
+                Data:'',
+                Text:'',
+                BagAllowances:bagAllowancesArray[0],
+              };
+              dataPer.Passengers[pass].bags.push(bagObj); 
+            }
+          }
+        } 
+
         let special = {
           fields:[]
         };
@@ -814,13 +855,51 @@ class SearchService {
       var Passengers        = res.data.Booking.Passengers;
       var SeatMaps          =  res.data.SeatMaps;
       var EMDTicketFareOptions =  res.data.FareInfo.EMDTicketFareOptions;
+      var ETTicketFares        =  res.data.FareInfo.ETTicketFares;
       dataPer.Passengers    = Passengers; 
       dataPer.SeatMaps = SeatMaps;
       var Segments = res.data.Booking.Segments;
       const refArray = Segments.filter(segment => segment.BookingClass.StatusCode === "HK").map(segment => segment.Ref);
       dataPer.EMDTicketFareOptions = EMDTicketFareOptions;
 
+      const prepaidExcessBaggageVoucher = EMDTicketFareOptions.find(item => item.AssociatedSpecialServiceCode === "EXBG");
+      
       for (const  pass in Passengers) {
+
+        if (prepaidExcessBaggageVoucher) {
+          const appliableRefSegments = prepaidExcessBaggageVoucher.AppliableRefSegments;
+
+          if (Array.isArray(appliableRefSegments)) {
+              dataPer.Passengers[pass].bags = []; 
+              for (let i = 0; i < appliableRefSegments.length; i++) {
+                const bagAllowancesArray = await Promise.all(ETTicketFares.map((item) => {
+                  const couponFare = item.OriginDestinationFares.find((fare) =>
+                    fare.CouponFares.some((fare2) =>
+                      appliableRefSegments[i] === fare2.RefSegment
+                    )
+                  );
+
+                  if (couponFare) {
+                    return couponFare.CouponFares[0].BagAllowances[0];
+                  } else {
+                    return null; // If no match is found, you can choose to return null or some default value
+                  }
+                }));
+
+                let bagObj = { 
+                  Label:prepaidExcessBaggageVoucher.Label,
+                  Code :prepaidExcessBaggageVoucher.AssociatedSpecialServiceCode,
+                  RefSegment: appliableRefSegments[i],
+                  RefPassenger:Passengers[pass].Ref,
+                  Data:'',
+                  Text:'',
+                  BagAllowances:bagAllowancesArray[0],
+                };
+                dataPer.Passengers[pass].bags.push(bagObj); 
+            }
+          }
+        } 
+
         let special = {
           fields:[]
         };
