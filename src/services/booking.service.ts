@@ -70,7 +70,7 @@ class BookingService {
             },
             SpecialServices: result.SpecialServices,
             RemovedSpecialServices:[],
-            RemovedEMDTicketFares:[],
+            RemovedEMDTicketFares:[...result.RemovedFareInfo.RemovedEMDTicketFareForBags, ...result.RemovedFareInfo.RemovedEMDTicketFareForSports],
             EMDTicketFares:result.FareInfo.EMDTicketFares,
             RequestInfo: {
               AuthenticationKey: API_KEY,
@@ -137,15 +137,18 @@ class BookingService {
 
     };
     if(res.data.Booking!=null){ 
-      var SpecialServices   =  res.data.Booking.SpecialServices;
+      var response = res.data.Booking; 
+      var SpecialServices   =  response.SpecialServices;
       var OptionalSpecialServices   =  res.data.OptionalSpecialServices;
-      var Passengers                =  res.data.Booking.Passengers;
-      var SeatMaps                  =  res.data.Booking.SeatMaps;
+      var SpecialServicesForCheckIns=  res.data.SpecialServices;
+      var Passengers                =  response.Passengers;
+      var SeatMaps                  =  response.SeatMaps;
       var EMDTicketFareOptionsArr   =  res.data.FareInfo.EMDTicketFareOptions;
-      var ETTicketFares             =  res.data.Booking.FareInfo.ETTicketFares; 
-      var EMDTicketFares            =  res.data.Booking.FareInfo.EMDTicketFares; 
-      var SaleCurrencyCode          =  res.data.Booking.FareInfo.SaleCurrencyCode;
-      var Segments = res.data.Booking.Segments;
+      var ETTicketFares             =  response.FareInfo.ETTicketFares; 
+      var EMDTicketFares            =  response.FareInfo.EMDTicketFares;
+      var EMDTicketFaresAr          =  res.data.FareInfo.EMDTicketFares; 
+      var SaleCurrencyCode          =  response.FareInfo.SaleCurrencyCode;
+      var Segments                  = response.Segments;
       const refArray = Segments.filter(segment => segment.BookingClass.StatusCode === "HK").map(segment => segment.Ref);
       
       EMDTicketFareOptionsArr.forEach((option) => {
@@ -196,6 +199,29 @@ class BookingService {
                   }
                 }));
 
+                const RemovedBags = EMDTicketFares
+                .filter(item => item.RefPassenger === Passengers[pass].Ref && item.RefSegment === appliableRefSegments[i] && item.AssociatedSpecialServiceCode === "EXBG")
+                .map(item => item.Ref);
+
+                const RemovedSports = EMDTicketFares
+                .filter(item => item.RefPassenger === Passengers[pass].Ref && item.RefSegment === appliableRefSegments[i] && item.AssociatedSpecialServiceCode === "SPEQ")
+                .map(item => item.Ref);
+
+
+
+                const RemovedBags2 = EMDTicketFaresAr
+                .filter(item => item.RefPassenger === Passengers[pass].Ref && item.RefSegment === appliableRefSegments[i] && item.AssociatedSpecialServiceCode === "EXBG")
+                .map(item => item.Ref);
+
+                const RemovedSports2 = EMDTicketFaresAr
+                .filter(item => item.RefPassenger === Passengers[pass].Ref && item.RefSegment === appliableRefSegments[i] && item.AssociatedSpecialServiceCode === "SPEQ")
+                .map(item => item.Ref);
+
+
+                var RemovedBagsArr =  RemovedBags.filter(value => !RemovedBags2.includes(value));
+                var RemovedSportsArr =  RemovedSports.filter(value => !RemovedSports2.includes(value));
+
+  
                 let bagObj = { 
                   Label:prepaidExcessBaggageVoucher.Label,
                   Code :prepaidExcessBaggageVoucher.AssociatedSpecialServiceCode,
@@ -205,8 +231,10 @@ class BookingService {
                   Text:'',
                   SaleCurrencyCode:SaleCurrencyCode,
                   EMDTicketFareForBags:prepaidExcessBaggageVoucher,
+                  RemovedEMDTicketFareForBags:RemovedBagsArr,
                   BagAllowances:bagAllowancesArray[0],
-                  EMDTicketFareForSports:prepaidExcessSportsVoucher
+                  EMDTicketFareForSports:prepaidExcessSportsVoucher,
+                  RemovedEMDTicketFareForSports:RemovedSportsArr
                 };
                 dataPer.Passengers[pass].bags.push(bagObj); 
             }
@@ -246,7 +274,36 @@ class BookingService {
           }
         } 
         dataPer.PassengersDetails.push(special);
-        
+
+        for (const  key1 in SpecialServicesForCheckIns) { 
+          if(SpecialServicesForCheckIns[key1].RefPassenger==Passengers[pass].Ref)
+          {  
+            var Label = await this.specialServiceCode.find({Code:SpecialServicesForCheckIns[key1].Code});
+            for (const  lab in Label) {
+              var LabelName =  Label[lab].Label;
+            }
+
+            var type = '';
+            if (refArray[0] === SpecialServicesForCheckIns[key1].RefSegment) {
+              var type = 'Departure';
+            }
+            if (refArray[1] === SpecialServicesForCheckIns[key1].RefSegment) {
+              var type = 'Arrival';
+            }
+            let myObj = {
+              Code: SpecialServicesForCheckIns[key1].Code,
+              Text:SpecialServicesForCheckIns[key1].Text,
+              Data:SpecialServicesForCheckIns[key1].Data,
+              Label: LabelName,
+              type:type,
+              RefSegment:SpecialServicesForCheckIns[key1].RefSegment,
+              RefPassenger:SpecialServicesForCheckIns[key1].RefPassenger,
+            };
+            special.fields.push(myObj);
+          }
+        } 
+        dataPer.PassengersDetails.push(special);
+ 
         for (const  key1 in OptionalSpecialServices) { 
           if(OptionalSpecialServices[key1].RefPassenger==Passengers[pass].Ref)
           {  
@@ -1207,6 +1264,10 @@ class BookingService {
     const FareInfo = {
                       EMDTicketFares: []
                   }; 
+    const RemovedFareInfo = {
+                      RemovedEMDTicketFareForBags: [],
+                      RemovedEMDTicketFareForSports:[]
+                  }; 
     //var AncillaryData     =  bookingData.AncillaryData
     var SeatMapDeparture  =  bookingData.SeatMap.departure;
     var SeatMapArrival    =  bookingData.SeatMap.arrival; 
@@ -1235,7 +1296,9 @@ class BookingService {
               SaleCurrencyAmount:bags.EMDTicketFareForBags.SaleCurrencyAmount
             }
             FareInfo.EMDTicketFares.push(BAG);
+            
           }
+          
 
           for (let i = 0; i < bags.SportsEquipment; i++) {
             const BAG = {
@@ -1250,7 +1313,10 @@ class BookingService {
               SaleCurrencyAmount:bags.EMDTicketFareForSports.SaleCurrencyAmount
             }
             FareInfo.EMDTicketFares.push(BAG);
-          }  
+            
+          }
+          RemovedFareInfo.RemovedEMDTicketFareForBags   =   [...RemovedFareInfo.RemovedEMDTicketFareForBags, ...bags.RemovedEMDTicketFareForBags];
+          RemovedFareInfo.RemovedEMDTicketFareForSports =   [...RemovedFareInfo.RemovedEMDTicketFareForSports, ...bags.RemovedEMDTicketFareForSports];
         }); 
       }
       
@@ -1271,6 +1337,8 @@ class BookingService {
             }
             FareInfo.EMDTicketFares.push(BAG);
           }
+          
+
           for (let i = 0; i < bags.SportsEquipment; i++) {
        
             const BAG = {
@@ -1284,8 +1352,10 @@ class BookingService {
               Ref: bags.EMDTicketFareForSports.Ref,
               SaleCurrencyAmount:bags.EMDTicketFareForSports.SaleCurrencyAmount
             }
-            FareInfo.EMDTicketFares.push(BAG);
+            FareInfo.EMDTicketFares.push(BAG); 
           }  
+          RemovedFareInfo.RemovedEMDTicketFareForBags   =   [...RemovedFareInfo.RemovedEMDTicketFareForBags, ...bags.RemovedEMDTicketFareForBags];
+          RemovedFareInfo.RemovedEMDTicketFareForSports =   [...RemovedFareInfo.RemovedEMDTicketFareForSports, ...bags.RemovedEMDTicketFareForSports];
         }); 
       } 
     }  
@@ -1590,6 +1660,7 @@ class BookingService {
     const responce = {
         SpecialServices: SpecialServices,
         FareInfo:FareInfo,
+        RemovedFareInfo:RemovedFareInfo,
         Passengers:Passengers
       }
     return responce;
