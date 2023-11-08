@@ -6,7 +6,7 @@ import validationMiddleware from '@middlewares/validation.middleware';
 import {CreateBookingDto,CreateBookingExchangeDto,ModifyBookingDto,SearchBookingDto,
     PrepareBookingModiDto,CreateTicketDto,LoadMCOTicketDto,
     SendTicketConfirmationDto,AddItineraryDto,PrepareAdditionalItineraryDto,
-    CancelBookingDto,PrepareCancelBookingDto,paymentRequestDto,PaymentCheckDto
+    CancelBookingDto,PrepareCancelBookingDto,paymentRequestDto,PaymentCheckDto,CabsbookDto
 } from '@dtos/booking.dto';
 class BookingRoute implements Routes {
   public path = '/';
@@ -38,6 +38,8 @@ class BookingRoute implements Routes {
         this.router.post(`${this.path}exchangeCreateBooking`,validationMiddleware(CreateBookingExchangeDto, 'body'), this.bookingController.exchangeCreateBooking);
         this.router.post(`${this.path}paymentRequest`,validationMiddleware(paymentRequestDto, 'body'), this.bookingController.paymentRequest);
         this.router.post(`${this.path}paymentCheck`, this.bookingController.paymentCheck);
+        this.router.post(`${this.path}updateCabs`, this.bookingController.updateCabs);
+        this.router.post(`${this.path}cabsBooking`, this.bookingController.cabsBooking);
        
       }
 } 

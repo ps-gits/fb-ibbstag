@@ -1,9 +1,10 @@
 import { API_URL,API_KEY} from '@config';
 import { HttpException } from '@exceptions/HttpException';
-import { Location,EligibleOriginDestinations } from '@interfaces/cron.interface';
+import { Location,EligibleOriginDestinations,Country} from '@interfaces/cron.interface';
 import locationModel from '@models/location.model'; 
 import eligibleOriginDestinationsModel from '@models/eligibleOriginDestinations.model';
-import allowedOriginDestinationsModel from '@models/allowedOriginDestinations.model'; 
+import allowedOriginDestinationsModel from '@models/allowedOriginDestinations.model';  
+import countryModel from '@models/country.model';
 import { isEmpty } from '@utils/util'; 
 import { OriginDestinationDto,OriginDto} from '@dtos/search.dto';
 const axios = require('axios');
@@ -12,6 +13,7 @@ class CommonService {
   public location = locationModel; 
   public allowedOriginDestinations    = allowedOriginDestinationsModel;
   public eligibleOriginDestinations   = eligibleOriginDestinationsModel;
+  public country   = countryModel;
 
   public async getLocation(): Promise<Location[]> {
     const query  = [
@@ -89,51 +91,11 @@ class CommonService {
     const location:Location[] = await this.allowedOriginDestinations.aggregate(query);
     return location[0].DestinationCodes;
   }
-  public async updateUser(userId: string, userData: UpdateUserDto): Promise<ProfileData> {
-    if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
-    if (userData.Login) {
-      const findUser: ProfileData = await this.users.findOne({ Login: userData.Login });
-      if (!findUser) throw new HttpException(400, 'This account not found.');
-    } 
-    var URL = API_URL+'UpdateCustomer';
-    try {
-        const requestData = {
-          request: {
-            Customer:{
-              CivilityCode: userData[0].CivilityCode,
-              Emails: userData[0].Emails,
-              Firstname: userData[0].FirstName,
-              Middlename: userData[0].MiddleName,
-              Surname: userData[0].Surname,
-              Phones: userData[0].Phones,
-              TypeCode: userData[0].TypeCode,
-              CultureName: "en-GB",
-              Currency: userData[0].Currency,
-            },
-             
-            RequestInfo: {
-              AuthenticationKey: API_KEY,
-              CultureName: 'en-GB'
-            },
-            Extensions: null
-          }
-        };
-        axios.post(URL, requestData);
-        this.users.updateOne({ "Login": userData[0].Login },{$set: userData[0]});
-        // Delete documents that match a specific condition
-        const deleteResult = await this.userMembers.deleteMany({
-          "Login": userData[0].Login
-        });
-        // Insert new documents
-        await this.userMembers.insertMany(userData); 
-        const findUser1: ProfileData = await this.userMembers.find({ Login: userData[0].Login });
-        if (isEmpty(findUser1)) throw new HttpException(400, 'Member data not found');
-        return findUser1;
-      } catch (error) { 
-          throw new HttpException(400,'This account not found.'); 
-      }
+  public async getCountry(): Promise<Country[]> {
+    const CountryData: Country[] =  await this.country.find({ Code: { $ne: null } });
+    return CountryData; 
   }
-   
+
     
 } 
 export default CommonService;

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express'; 
-import { Location,EligibleOriginDestinations,AllowedOriginDestinations,AirLineDetails} from '@interfaces/cron.interface';
+import { Location,EligibleOriginDestinations,AllowedOriginDestinations,AirLineDetails,Country} from '@interfaces/cron.interface';
 import cronService from '@services/cron.service';
 
 class CronController {
@@ -34,6 +34,15 @@ class CronController {
     try {
       const SetAirLineDetailsData: AirLineDetails[] = await this.CronService.SetAirLineDetails();
       res.status(200).json({ data: SetAirLineDetailsData, message: 'AirLine Details' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public setCountry = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const SetCountryData: Country[] = await this.CronService.SetCountry();
+      res.status(200).json({ data: SetCountryData, message: 'Country Details' });
     } catch (error) {
       next(error);
     }

@@ -3,7 +3,7 @@ import { CreateBookingDto,CreateBookingExchangeDto,loadBookingDto,calendarDto,Mo
   SearchBookingDto,PrepareBookingModiDto,
   CreateTicketDto,LoadMCOTicketDto,SendTicketConfirmationDto,
   AddItineraryDto,PrepareAdditionalItineraryDto,CancelBookingDto,PrepareCancelBookingDto,paymentRequestDto
-  ,PaymentCheckDto,HeadersDto} from '@dtos/booking.dto';
+  ,PaymentCheckDto,HeadersDto,cabsBookingDto} from '@dtos/booking.dto';
 import { Booking,LoadBooking,Calendar,Payment} from '@interfaces/booking.interface';
 import bookingService from '@services/booking.service';
 import { Search } from '@interfaces/search.interface';
@@ -195,6 +195,27 @@ class BookingController {
       next(error);
     }    
   }
+
+  public cabsBooking = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const cabsBookingData: cabsBookingDto = req.body;
+      const CreateCabsData: Payment = await this.BookingService.cabsBooking(cabsBookingData);
+      res.status(200).json({ data: CreateCabsData, message: 'Cabs Booking Result',status : 200 });
+    } catch (error) {
+      next(error);
+    }    
+  }
+
+  public updateCabs = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const CabsbookData: CabsbookDto = req.body;
+      const CreateCabsBookData: Payment = await this.BookingService.updateCabs(CabsbookData);
+      res.status(200).json({ data: CreateCabsBookData, message: 'Cabs Result',status : 200 });
+    } catch (error) {
+      next(error);
+    }    
+  }
+  
 
   
 }

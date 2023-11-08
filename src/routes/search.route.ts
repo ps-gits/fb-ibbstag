@@ -21,6 +21,7 @@ class SearchRoute implements Routes {
       this.router.post(`${this.path}searchExchangeFlight`, this.searchController.searchExchangeFlight); 
 
       this.router.get(`${this.path}getOrigin`, this.commonController.getLocation);
+      this.router.get(`${this.path}getCountry`, this.commonController.getCountry);
       this.router.post(`${this.path}getDestinations`, this.commonController.getDestination);
       this.router.post(`${this.path}getEligibleOriginDestinations`, this.commonController.getEligibleOriginDestinations);
       this.router.get(`${this.path}compareFairFamily`, this.searchController.compareFairFamily);

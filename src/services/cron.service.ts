@@ -1,10 +1,11 @@
 import { API_URL,API_KEY} from '@config';
 import { HttpException } from '@exceptions/HttpException';
-import { Location,EligibleOriginDestinations,AllowedOriginDestinations,AirLineDetails } from '@interfaces/cron.interface';
+import { Location,EligibleOriginDestinations,AllowedOriginDestinations,AirLineDetails,Country } from '@interfaces/cron.interface';
 import locationModel from '@models/location.model';
 import specialServiceCodeModel from '@models/specialServiceCode.model';
 import eligibleOriginDestinationsModel from '@models/eligibleOriginDestinations.model'; 
 import allowedOriginDestinationsModel from '@models/allowedOriginDestinations.model';
+import countryModel from '@models/country.model';
 import airLineDetailsModel from '@models/airLineDetails.model';
 import { length } from 'class-validator';
 const axios = require('axios');
@@ -15,6 +16,7 @@ class CronService {
   public allowedOriginDestinations    = allowedOriginDestinationsModel; 
   public airLineDetails               = airLineDetailsModel;
   public specialServiceCode           = specialServiceCodeModel; 
+  public country                      = countryModel; 
   
   
   public async SetLocation(): Promise<Location[]> {
@@ -203,6 +205,31 @@ class CronService {
     return setAirLineDetailsData; 
   } 
    
+  public async SetCountry(): Promise<Country[]> {
+
+    var URL = API_URL+'GetValueCodes';
+    const requestData = {
+      request: {
+        RequestInfo: {
+          AuthenticationKey: API_KEY,
+          CultureName: 'en-GB'
+        },
+        ValueCodeName:"Country",
+        Extension: null
+      }
+    };
+    let res =  await axios.post(URL, requestData);
+    let data = res.data;
+    if (!data.Codes) throw new HttpException(409, `Something Missing, Data not found`);
+    this.country.deleteMany({}, (err, result) => {
+      if (err) {
+        console.error(err);
+      }
+      console.log(result.deletedCount + " documents deleted."); 
+    });
+    const setCountryData: Country[] = await this.country.insertMany(data.Codes);
+    return setCountryData; 
+  } 
   
    
   

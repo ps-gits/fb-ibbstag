@@ -16,6 +16,7 @@ class CronRoute implements Routes {
       this.router.get(`${this.path}/setEligibleOriginDestinations`, this.cronController.setEligibleOriginDestinations);
       this.router.get(`${this.path}/setAllowedOriginDestinations`, this.cronController.setAllowedOriginDestinations);
       this.router.get(`${this.path}/setAirLineDetails`, this.cronController.setAirLineDetails);
+      this.router.get(`${this.path}/setCountry`, this.cronController.setCountry);
    
     }
 } 

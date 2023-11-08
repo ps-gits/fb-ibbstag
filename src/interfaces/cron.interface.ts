@@ -71,4 +71,11 @@ export interface Location {
     Extensions:String,
   }
 
+   export interface Country {
+    _id: string;
+    Code: string;
+    Label: string;
+  }
+
+
   

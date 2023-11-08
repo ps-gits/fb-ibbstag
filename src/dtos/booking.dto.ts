@@ -88,6 +88,11 @@ export class EMDTicketFareOptions{
   @IsString()
   public AncillaryCode:String;
 }
+// export class checkInPassengers{
+//   @IsString()
+//   public AncillaryCode:String;
+// }
+
 
 export class CreateBookingExchangeDto {
   @ArrayUnique()
@@ -115,6 +120,20 @@ export class loadBookingDto {
   public ID: string;
   public PassengerName: string; 
 }
+export class checkinBookingDto {
+  public TypeCode: string;
+  public ID: string;
+  public PassengerName: string; 
+  
+}
+
+export class cabsBookingDto {
+  public TypeCode: string;
+  public ID: string;
+  public PassengerName: string; 
+}
+
+
 export class calendarDto {
   public StartDate: string;
   public EndDate: string;
@@ -154,6 +173,9 @@ export class PrepareBookingModiDto {
 
   @IsString()
   public PassengerName: string;
+
+  @ArrayUnique()
+  public checkInPassengers: Array<String>; 
 }
 
 export class CreateTicketDto {
@@ -305,6 +327,13 @@ export class PaymentCheckDto{
 export class HeadersDto{
   public 'x-transaction-id': string;
  
+}
+
+export class CabsbookDto{
+  @IsString()
+  public 'uuid': string;
+  public 'event': string;
+  public 'payload': string;
 }
 
 

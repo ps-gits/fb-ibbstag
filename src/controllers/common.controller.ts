@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { Location,EligibleOriginDestinations} from '@interfaces/cron.interface';
+import { Location,EligibleOriginDestinations,Country} from '@interfaces/cron.interface';
 import CommonService from '@services/common.service'; 
 import { OriginDestinationDto,OriginDto} from '@dtos/search.dto';
 
@@ -40,6 +40,15 @@ class CommonController {
         return item;
       });
       res.status(200).json({ data: modifiedData, message: 'Get All Loacation' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getCountry = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const CountryData: Country[] = await this.CommonService.getCountry();
+      res.status(200).json({ data: CountryData, message: 'Get All Country' });
     } catch (error) {
       next(error);
     }
