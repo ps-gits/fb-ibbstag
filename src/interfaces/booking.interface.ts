@@ -1,46 +1,9 @@
 export interface Booking {
-  PassengersDetails: PassengerDetails[];
-  Passengers: PassengersData;
-  Amount: AmountData;
-  OriginDestination: OriginDestinationData[];
-  PnrInformation: PnrInformationData;
-  RefETTicketFare: RefETTicketFareData[];
-  SeatMaps: SeatMapData[];
-  FareRules: FareRulesData;
+  Passengers: object;
+  Amount:object;
+  OriginDestination: Array<String>;
+  PnrInformation:object;
 }
-
-interface PassengerDetails {
-  // Define properties of PassengerDetails here...
-}
-
-interface PassengersData {
-  // Define properties of PassengersData here...
-}
-
-interface AmountData {
-  // Define properties of AmountData here...
-}
-
-interface OriginDestinationData {
-  // Define properties of OriginDestinationData here...
-}
-
-interface PnrInformationData {
-  // Define properties of PnrInformationData here...
-}
-
-interface RefETTicketFareData {
-  // Define properties of RefETTicketFareData here...
-}
-
-interface SeatMapData {
-  // Define properties of SeatMapData here...
-}
-
-interface FareRulesData {
-  // Define properties of FareRulesData here...
-}
-
  
   export interface LoadBooking {
     Passengers: object;
@@ -76,4 +39,13 @@ export interface BookingHistory{
   destination: string;
   originDate: string;
   destinationDate: string; 
+}
+
+
+export interface BookingCabsEntitlement{
+  _id: string;
+  pnrcode:string;
+  uuid: string;
+  refPassanger:string;
+  refSegment: string;
 }

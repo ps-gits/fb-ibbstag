@@ -10,6 +10,7 @@ import { API_URL,API_KEY,END_POINT,CLIENT_ID,CLIENT_SECRET} from '@config';
 import locationModel from '@models/location.model';
 import specialServiceCodeModel from '@models/specialServiceCode.model';
 import bookingHistoryModel from '@models/bookingHistory.model';
+import bookingCabsEntitlementModel from '@models/BookingCabsEntitlement.model';
 import { length } from 'class-validator';
 const crypto = require('crypto');
 const axios = require('axios');
@@ -1085,10 +1086,13 @@ class BookingService {
 
     const formattedDate = `${year}-${month}-${day}`;
     const entitlementsArray = [];
+
+    let count = 0;
     for (const CouponsData of CouponsDataArr) {
+        count++;
         const flightNumber    = CouponsData.SegmentSold.FlightInfo.FlightNumber;
         const ArrivalDate     = CouponsData.SegmentSold.FlightInfo.ArrivalDate;
-        const DepartureDate     = CouponsData.SegmentSold.FlightInfo.DepartureDate;
+        const DepartureDate   = CouponsData.SegmentSold.FlightInfo.DepartureDate;
         const OriginCode      = CouponsData.SegmentSold.OriginCode;
         const DestinationCode = CouponsData.SegmentSold.DestinationCode;
         
@@ -1121,7 +1125,7 @@ class BookingService {
             }
           ],
           "booking": {
-            "reference": modifybookingData.PnrCode+'-'+EMDTicketFares[0].RefPassenger+'-'+EMDTicketFares[0].RefSegment,
+            "reference": modifybookingData.PnrCode+'-'+EMDTicketFares[0].RefPassenger+'-'+EMDTicketFares[count].RefSegment,
             "service_designator": flightNumber,
             "guests": 1,
             "departure": OriginCode,
@@ -1498,15 +1502,16 @@ class BookingService {
       payload:{},
 
     };
-    InsertData.uuid      = cabsbookData.payload.uuid;
-    InsertData.event     = cabsbookData.payload.event;
+    InsertData.uuid      = cabsbookData.uuid;
+    InsertData.event     = cabsbookData.event;
     InsertData.pickup    = cabsbookData.payload.service.details.pickup;
     InsertData.dropoff   = cabsbookData.payload.service.details.dropoff;
-    InsertData.payload   = cabsbookData.payload;
+    InsertData.payload   = cabsbookData;
     var bookingNumberData = cabsbookData.payload.service.details.booking_number;
     let pnrcode          = bookingNumberData.split('-');
     const result = await this.bookingHistory.updateOne({ "pnrcode": pnrcode },{$set: InsertData});
     const query = { 'pnrcode': pnrcode[0] };
+
     const BookingHis = await this.bookingHistory.findOne(query);
     if(BookingHis){
         const requestData = {
@@ -1540,11 +1545,11 @@ class BookingService {
             }
           };
        
-      let dataModify : Booking = await this.Responce(requestData,'ModifyBooking');
+      return await this.Responce(requestData,'ModifyBooking');
     }else{
       return true;
     }
-    return dataModify;
+    
   }
   async bookingRequest(bookingData: any,method: any): Promise<any> {
    
