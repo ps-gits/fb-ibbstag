@@ -6,6 +6,7 @@ import { HttpException } from '@exceptions/HttpException';
 import { Booking,LoadBooking,Calendar,Payment} from '@interfaces/booking.interface'; 
 import { Search } from '@interfaces/search.interface';
 import { isEmpty,formatDate,generateOrderNumber,formattedTime,localeDateString,parseChildren,formatDuration } from '@utils/util';
+import { sendEmail } from '@utils/sendEmail';
 import { API_URL,API_KEY,END_POINT,CLIENT_ID,CLIENT_SECRET} from '@config';
 import locationModel from '@models/location.model';
 import specialServiceCodeModel from '@models/specialServiceCode.model';
@@ -2371,6 +2372,21 @@ class BookingService {
       }
     }
     return dataModify;
+  }
+  async sendMail(toEmailVal: any,fromEmailVal:any,emailSubjectVal:any,emailTextVal:any): Promise<any>
+  {
+    const toEmail = toEmailVal;
+    const fromEmail = fromEmailVal;
+    const emailSubject = emailSubjectVal;
+    const emailText = emailTextVal;
+    //Call the function to send the email
+    // sendEmail({ to: toEmail, from: fromEmail, subject: emailSubject, text: emailText })
+    //   .then(() => {
+    //     console.log('Email sent successfully');
+    //   })
+    //   .catch((error: Error) => {
+    //     console.error(error.toString());
+    //   });
   }
 }
 export default BookingService;
