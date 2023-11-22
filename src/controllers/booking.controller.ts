@@ -3,8 +3,8 @@ import { CreateBookingDto,CreateBookingExchangeDto,loadBookingDto,calendarDto,Mo
   SearchBookingDto,PrepareBookingModiDto,
   CreateTicketDto,LoadMCOTicketDto,SendTicketConfirmationDto,
   AddItineraryDto,PrepareAdditionalItineraryDto,CancelBookingDto,PrepareCancelBookingDto,paymentRequestDto
-  ,PaymentCheckDto,HeadersDto,cabsBookingDto} from '@dtos/booking.dto';
-import { Booking,LoadBooking,Calendar,Payment} from '@interfaces/booking.interface';
+  ,PaymentCheckDto,HeadersDto,cabsBookingDto,FlightStatusRequestDto} from '@dtos/booking.dto';
+import { Booking,LoadBooking,Calendar,Payment,BookingStatus} from '@interfaces/booking.interface';
 import bookingService from '@services/booking.service';
 import { Search } from '@interfaces/search.interface';
 
@@ -211,6 +211,15 @@ class BookingController {
       const CabsbookData: CabsbookDto = req.body;
       const CreateCabsBookData: Payment = await this.BookingService.updateCabs(CabsbookData);
       res.status(200).json({ data: CreateCabsBookData, message: 'Cabs Result',status : 200 });
+    } catch (error) {
+      next(error);
+    }    
+  }
+  public getFlightStatus = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const flightStatusData: FlightStatusRequestDto = req.body;
+      const flightStatusRes: BookingStatus = await this.BookingService.getFlightStatus(flightStatusData);
+      res.status(200).json({ data: flightStatusRes, message: 'Flight Status Result',status : 200 });
     } catch (error) {
       next(error);
     }    

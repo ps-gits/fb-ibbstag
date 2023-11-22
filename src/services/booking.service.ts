@@ -1552,6 +1552,104 @@ class BookingService {
     }
     
   }
+  public async getFlightStatus(FlightStatusRequestData: FlightStatusRequestDto, callback: () => void): Promise<Booking> {
+    if (isEmpty(FlightStatusRequestData)) throw new HttpException(400, 'request Data is empty');
+    const BookingStatus = new Promise(async (resolve, reject) => {
+      try {
+        let dataModify = {
+          FlightSummaries: [],
+        };
+        
+        var CityPair = "";
+        FlightStatusRequestData.DestinationCode;
+        if(FlightStatusRequestData.DestinationCode && FlightStatusRequestData.OriginCode){
+          var CityPair  = {
+            DestinationCode: FlightStatusRequestData.DestinationCode,
+            OriginCode: FlightStatusRequestData.OriginCode
+          }
+        }      
+        const requestData = {
+          request: {
+
+            CityPair:CityPair,
+            FlightNumber: FlightStatusRequestData.FlightNumber, 
+            Date:FlightStatusRequestData.Date, 
+            RequestInfo: {
+              AuthenticationKey: API_KEY,
+              CultureName: 'en-GB'
+            },
+            Extensions: null
+          }
+        };
+       // resolve(requestData);
+        var URL = API_URL+'FlightStatus?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
+        let res =  await axios.post(URL, requestData);
+        var   FlightSummaries  = res.data.FlightSummaries;
+        for (const  cityP in FlightSummaries) {
+              var CityPairData = res.data.FlightSummaries[cityP].CityPair;
+              var OriginCode1 = await this.location.find({Code:CityPairData.OriginCode});
+              for (const  loc2 in OriginCode1) {
+                var OriginCity =  OriginCode1[loc2].city;
+                var OriginName =  OriginCode1[loc2].name;
+              }
+              var DestinationCode1 = await this.location.find({Code:CityPairData.DestinationCode});
+              for (const  loc2 in DestinationCode1) {
+                var DestinationCity =  DestinationCode1[loc2].city;
+                var DestinationName =  DestinationCode1[loc2].name;
+              }
+              let OriginDestination1 =     {
+                "OriginCode": CityPairData.OriginCode,
+                "OriginCity": OriginCity,
+                "OriginName": OriginName
+              };
+              let OriginDestination2 =     {
+                "DestinationCode": CityPairData.DestinationCode,
+                "DestinationCity":DestinationCity,
+                "DestinationName":DestinationName
+              };
+
+               
+                // "DepartureDate": localeDateString(Segments[seg].FlightInfo.DepartureDate),
+                // "OrginDepartureTime":formattedTime(Segments[seg].FlightInfo.DepartureDate),
+                // "DestinationArrivalTime":formattedTime(Segments[seg].FlightInfo.ArrivalDate),
+                // "ArrivalDate": localeDateString(Segments[seg].FlightInfo.ArrivalDate),
+                // "OriginAirportTerminal": Segments[seg].FlightInfo.OriginAirportTerminal,
+                
+                
+            let PairCity = {
+              CityPair: [],
+              OriginCode: CityPairData.OriginCode,
+              OriginCity: OriginCity,
+              OriginName: OriginName,
+              DestinationCode: CityPairData.DestinationCode,
+              DestinationCity:DestinationCity,
+              DestinationName:DestinationName,
+              DepartureDate: localeDateString(FlightSummaries[cityP].ScheduledDepartureTime),
+              OrginDepartureTime:formattedTime(FlightSummaries[cityP].ScheduledDepartureTime),
+              DestinationArrivalTime:formattedTime(FlightSummaries[cityP].ScheduledArrivalTime),
+              ArrivalDate: localeDateString(FlightSummaries[cityP].ScheduledArrivalTime),
+              FlightNumber: FlightSummaries[cityP].FlightNumber,
+             // ScheduledDepartureTime: FlightSummaries[cityP].ScheduledDepartureTime,
+              RealDepartureTime: FlightSummaries[cityP].RealDepartureTime,
+            //  ScheduledArrivalTime: FlightSummaries[cityP].ScheduledArrivalTime,
+              EstimatedArrivalTime: FlightSummaries[cityP].EstimatedArrivalTime,
+              RealArrivalTime: FlightSummaries[cityP].RealArrivalTime,
+              AirportFlightStatusCode:FlightSummaries[cityP].AirportFlightStatusCode
+            };
+              
+            PairCity.CityPair.push(OriginDestination1);
+            PairCity.CityPair.push(OriginDestination2);
+            dataModify.FlightSummaries.push(PairCity);
+          }
+            ///resolve(requestData);
+            //let data : Booking = await  this.Responce(requestData,'FlightStatus');
+            resolve(dataModify);
+      } catch (error) {
+        reject(error);
+      }
+    });
+    return  BookingStatus;
+  }
   async bookingRequest(bookingData: any,method: any): Promise<any> {
    
     const obj = bookingData.booking;
@@ -1936,21 +2034,21 @@ class BookingService {
             const DOC =  {
               Data: {
                 Docs: {
-                  //"Documents":DocumentsObj  
-                  "Documents":[
-                          {
-                            "IssueCountryCode": "FR",
-                            "NationalityCountryCode": "FR",
-                            "DateOfBirth": "1993-03-19T00:00:00",
-                            "Gender": "M",
-                            "DocumentExpiryDate": "2025-02-10T00:00:00",
-                            "DocumentIssuanceDate": "2023-01-10T00:00:00",
-                            "Firstname": DocumentsObj[0].Firstname,
-                            "Surname": DocumentsObj[0].Surname,
-                            "DocumentTypeCode": "PP",
-                            "DocumentNumber": "30068246" 
-                          }
-                        ] , 
+                  "Documents":DocumentsObj  
+                  // "Documents":[
+                  //         {
+                  //           "IssueCountryCode": "FR",
+                  //           "NationalityCountryCode": "FR",
+                  //           "DateOfBirth": "1993-03-19T00:00:00",
+                  //           "Gender": "M",
+                  //           "DocumentExpiryDate": "2025-02-10T00:00:00",
+                  //           "DocumentIssuanceDate": "2023-01-10T00:00:00",
+                  //           "Firstname": DocumentsObj[0].Firstname,
+                  //           "Surname": DocumentsObj[0].Surname,
+                  //           "DocumentTypeCode": "PP",
+                  //           "DocumentNumber": "30068246" 
+                  //         }
+                  //       ] , 
                 } 
               },
               RefPassenger:RefPassenger,
@@ -1962,11 +2060,11 @@ class BookingService {
 
             const DOCO = {
               Data: {
-                //Doco:VisaDocuments[0]
-                Doco:{
-                    "PlaceOfBirth": "FR", 
-                    "Extensions": null
-                },
+                Doco:VisaDocuments[0]
+                // Doco:{
+                //     "PlaceOfBirth": "FR", 
+                //     "Extensions": null
+                // },
               },
               RefPassenger:RefPassenger,
               Code: "DOCO"
@@ -2012,9 +2110,6 @@ class BookingService {
         var  SpecialServices   = response.SpecialServices;
         var  Passengers        = response.Passengers; 
         if(method=='PrepareCheckin'){
-
-        
-
           var CheckinTargets   = res.data.CheckinTargets;
           var TicketInfo       = res.data.Booking.TicketInfo.ETTickets;
           const checkableCases = CheckinTargets.filter(entry =>

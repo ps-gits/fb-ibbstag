@@ -337,4 +337,12 @@ export class CabsbookDto{
 }
 
 
+export class FlightStatusRequestDto{
+  @IsString()
+  public 'uuid': string;
+  public 'event': string;
+  public 'payload': string;
+}
+
+
 

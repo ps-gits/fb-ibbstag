@@ -49,3 +49,11 @@ export interface BookingCabsEntitlement{
   refPassanger:string;
   refSegment: string;
 }
+
+export interface BookingStatus{
+  _id: string;
+  pnrcode:string;
+  uuid: string;
+  refPassanger:string;
+  refSegment: string;
+}

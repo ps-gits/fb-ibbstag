@@ -40,6 +40,7 @@ class BookingRoute implements Routes {
         this.router.post(`${this.path}paymentCheck`, this.bookingController.paymentCheck);
         this.router.post(`${this.path}updateCabs`, this.bookingController.updateCabs);
         this.router.post(`${this.path}cabsBooking`, this.bookingController.cabsBooking);
+        this.router.post(`${this.path}getFlightStatus`, this.bookingController.getFlightStatus);
        
       }
 } 
