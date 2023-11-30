@@ -5,7 +5,7 @@ import { CreateBookingDto,CreateBookingExchangeDto,loadBookingDto,calendarDto,Mo
 import { HttpException } from '@exceptions/HttpException';
 import { Booking,LoadBooking,Calendar,Payment} from '@interfaces/booking.interface'; 
 import { Search } from '@interfaces/search.interface';
-import { isEmpty,formatDate,generateOrderNumber,formattedTime,localeDateString,parseChildren,formatDuration } from '@utils/util';
+import { isEmpty,formatDate,generateOrderNumber,formattedTime,localeDateString,parseChildren,formatDuration,toStringtoDate } from '@utils/util';
 import { sendEmail } from '@utils/sendEmail';
 import { API_URL,API_KEY,END_POINT,CLIENT_ID,CLIENT_SECRET} from '@config';
 import locationModel from '@models/location.model';
@@ -62,7 +62,7 @@ class BookingService {
         const result = await this.bookingRequest(modifybookingData,'ModifyBooking');
         const requestData = {
           request: {   
-            Passengers: result.Passengers,
+            //Passengers: result.Passengers,
             UniqueID: {
               TypeCode: "PnrCode",
               ID:modifybookingData.PnrCode
@@ -111,6 +111,7 @@ class BookingService {
   public async prepareBookingModification(preparebookingData: PrepareBookingModiDto): Promise<Search> {
     if (isEmpty(preparebookingData)) throw new HttpException(400, 'Search booking request Data is empty'); 
     var URL = API_URL+'PrepareBookingModification?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
+    var URL2 = API_URL+'PrepareCheckin?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
     const requestData = {
       request: {  
         UniqueID: {
@@ -175,6 +176,30 @@ class BookingService {
       dataPer.cpd_code   = cpd_code; 
       dataPer.Passengers = Passengers; 
       if(preparebookingData.checkInPassengers.length > 0){
+
+         const requestDataCheckin = {
+            request: {
+              UniqueID:{
+                TypeCode: "PnrCode",
+                ID: preparebookingData.ID
+              },
+             
+              Verification:  {
+                  PassengerName: preparebookingData.PassengerName
+              },
+              DeferredIssuance:false,
+              IncludeAllOptionalSpecialServices: true,
+              RequestInfo: {
+                AuthenticationKey: API_KEY,
+                CultureName: 'en-GB'
+              },
+              Extensions: null
+            }
+          };
+
+        let resPreChcekin =  await axios.post(URL2, requestDataCheckin);
+        var responsePreCheckin = resPreChcekin.data.Booking; 
+        var SeatMaps = responsePreCheckin.SeatMaps;
         const refSegmentValue = preparebookingData.checkInPassengers.length > 0 ? preparebookingData.checkInPassengers[0].RefSegment : null;
         dataPer.SeatMaps   = SeatMaps.filter(item => item.RefSegment === refSegmentValue);
 
@@ -314,7 +339,12 @@ class BookingService {
               RefSegment:SpecialServices[key1].RefSegment,
               RefPassenger:SpecialServices[key1].RefPassenger,
             };
-            special.fields.push(myObj);
+            if(SpecialServices[key1].Code=='DOCO' || SpecialServices[key1].Code=='DOCS'){
+             
+            }else{
+               special.fields.push(myObj);
+            }
+            
           }
         } 
         dataPer.PassengersDetails.push(special);
@@ -334,18 +364,29 @@ class BookingService {
             if (refArray[1] === SpecialServicesForCheckIns[key1].RefSegment) {
               var type = 'Arrival';
             }
-            // if(SpecialServicesForCheckIns[key1].Code==='DOCS'){
-            //   let Fields = [
-            //       "Documents[0].IssueCountryCode",
-            //       "Documents[0].NationalityCountryCode",
-            //       "Documents[0].DocumentExpiryDate",
-            //       "Documents[0].DocumentIssuanceDate",
-            //       "Documents[0].DocumentTypeCode",
-            //       "Documents[0].DocumentNumber"
-            //   ];
+            if(SpecialServicesForCheckIns[key1].Code==='DOCS'){
+              var myArray = SpecialServicesForCheckIns[key1].Data.Docs.AllowedDocumentTypeCodes
+              // let Fields = [
+              //     "Documents[0].IssueCountryCode",
+              //     "Documents[0].NationalityCountryCode",
+              //     "Documents[0].DocumentExpiryDate",
+              //     "Documents[0].DocumentIssuanceDate",
+              //     "Documents[0].DocumentTypeCode",
+              //     "Documents[0].DocumentNumber"
+              // ];
+              let Fields = SpecialServicesForCheckIns[key1].Data.Fields; 
+              const indexOfPP = myArray.indexOf("PP"); 
+              // Check if "PP" exists in the array
+              if (indexOfPP !== -1) {
 
-            //   SpecialServicesForCheckIns[key1].Data.Fields  = Fields;
-            // }
+                // Modify each element in the array
+                const modifiedFields = Fields.map(field => {
+                    // Replace the document index in each field
+                    return field.replace(/\[0\]/, `[${indexOfPP}]`);
+                });
+                SpecialServicesForCheckIns[key1].Data.Fields  = modifiedFields;
+              }
+            } 
             let myObj = {
               Code: SpecialServicesForCheckIns[key1].Code,
               Text:SpecialServicesForCheckIns[key1].Text,
@@ -1452,7 +1493,8 @@ class BookingService {
               },
             }
           };
-          //resolve(requestData);
+          
+          //resolve(CouponOrderValue[0]);
           let data : Booking = await this.Responce(requestData,'Checkin');
           resolve(data);
       } catch (error) {
@@ -2031,10 +2073,25 @@ class BookingService {
           
         } 
         if(DocumentsObj){
+        if(DocumentsObj.length > 0){
+            const updatedData = DocumentsObj.map(entry => {
+                  return {
+                      ...entry,
+                      DocumentIssuanceDate: toStringtoDate(entry.DocumentIssuanceDate),
+                      DocumentExpiryDate: toStringtoDate(entry.DocumentExpiryDate),
+                      DateOfBirth: toStringtoDate(entry.DateOfBirth),
+                      NationalityCountryCode: entry.PassportNationality,
+                      // DocumentNumber: entry.DocumentNumber,
+                      // DocumentTypeCode: entry.DocumentTypeCode,
+                      // IssueCountryCode: entry.IssueCountryCode,
+                  };
+              });
             const DOC =  {
+
+            
               Data: {
                 Docs: {
-                  "Documents":DocumentsObj  
+                  "Documents":updatedData  
                   // "Documents":[
                   //         {
                   //           "IssueCountryCode": "FR",
@@ -2056,21 +2113,24 @@ class BookingService {
             }
             SpecialServices.push(DOC);
           }
+        }  
         if(VisaDocuments){
+          if(VisaDocuments.length > 0){
 
-            const DOCO = {
-              Data: {
-                Doco:VisaDocuments[0]
-                // Doco:{
-                //     "PlaceOfBirth": "FR", 
-                //     "Extensions": null
-                // },
-              },
-              RefPassenger:RefPassenger,
-              Code: "DOCO"
-            }
-            SpecialServices.push(DOCO);
-        }
+              const DOCO = {
+                Data: {
+                  Doco:VisaDocuments[0]
+                  // Doco:{
+                  //     "PlaceOfBirth": "FR", 
+                  //     "Extensions": null
+                  // },
+                },
+                RefPassenger:RefPassenger,
+                Code: "DOCO"
+              }
+              SpecialServices.push(DOCO);
+          }
+        }  
 
            
       }
@@ -2219,7 +2279,7 @@ class BookingService {
 
             var TicketInfo             = res.data.Booking.TicketInfo.ETTickets;
             var BoardingPassList       = res.data.Booking.MiscInfo.BoardingPassList;
-            const TicketPrintHttpLink       = res.data.Booking.MiscInfo.TicketPrintHttpLink;
+            const TicketPrintHttpLink   = res.data.Booking.MiscInfo.TicketPrintHttpLink;
             const etTicketsMap = new Map(TicketInfo.map(etTicket => [etTicket.RefPassenger, etTicket]));
             const passengersMap = new Map(PassengersA.map(passenger => [passenger.Ref, passenger]));
 
@@ -2251,35 +2311,67 @@ class BookingService {
                 return acc;
             }, {});
 
-            const CouponOrderValue = requestData.request.ETTicketTargets.length > 0 ? requestData.request.ETTicketTargets[0].CouponOrder : 2;
+            //const jsonData = requestData.request.ETTicketTargets.length > 0 ? requestData.request.ETTicketTargets : '';
 
             // Iterate through passengersDetailsCheckin and associate HttpLink details
-            const passengersWithHttpLinks = mergedData.map(passenger => {
+            const passengersWithHttpLinks = await Promise.all(mergedData.map(async(passenger) => {
                 const documentNumber = passenger.DocumentNumber;
                 const httpLinks = documentNumberToHttpLinks[documentNumber] || [];
                 const CouponOrders = documentNumberToCouponOrders[documentNumber] || [];
                 //const couponOrderObjects = passenger.Coupons.filter(coupon => [CouponOrders].includes(coupon.CouponOrder));
-                const couponOrderObjects = passenger.Coupons.find(coupon => coupon.CouponOrder === CouponOrderValue);
-                const Coupons  = passenger.Coupons[1];
+                const jsonData = requestData.request.ETTicketTargets.length > 0 ? requestData.request.ETTicketTargets : '';
+                const desiredEntry = jsonData.find(item => item.DocumentNumber === documentNumber);
+                // Extract CouponOrders value
+                const CouponOrderValue = desiredEntry ? desiredEntry.CouponOrders[0] : null;
 
-                // var OriginCodePass = await this.location.find({Code:Coupons.SegmentSold.OriginCode});
-                // for (const  loc2 in OriginCode1) {
-                //   var OriginCity =  OriginCodePass[loc2].city;
-                //   var OriginName =  OriginCodePass[loc2].name;
-                // }
-                // var DestinationCodePass = await this.location.find({Code:Coupons.SegmentSold.DestinationCode});
-                // for (const  loc2 in DestinationCode1) {
-                //   var DestinationCity =  DestinationCodePass[loc2].city;
-                //   var DestinationName =  DestinationCodePass[loc2].name;
-                // }
+               // const couponOrderObjects = passenger.Coupons.find(coupon => coupon.CouponOrder === CouponOrderValue);
+                const refValues = Segments.filter(item => item.BookingClass.StatusCode !== 'XX').map(item => item.Ref);
+                
+                let Coupons, refSeg;
+                if(CouponOrderValue === 2) {
+                  Coupons = passenger.Coupons[1];
+                  refSeg = refValues[1];
+                }
+                if(CouponOrderValue === 1) {
+                  Coupons = passenger.Coupons[0];
+                  refSeg = refValues[0];
+                }
+
+                const SeatData = SpecialServices.filter(item => item.Code === "SEAT" && (item.RefPassenger === passenger.RefPassenger && item.RefSegment === refSeg));
+                const filteredData = EMDTicketFares.filter(
+                    item => item.RefPassenger === passenger.RefPassenger && item.RefSegment === refSeg && item.AssociatedSpecialServiceCode !== 'SEAT'
+                  );
+                // Extract unique AssociatedSpecialServiceCodes
+                const associatedSpecialServiceCodes = [...new Set(filteredData.map(item => item.AssociatedSpecialServiceCode))];
+                const SegmentsData = Segments.find(entry => entry.Ref === refSeg);
+                // Handle asynchronous location queries
+                const [OriginCode1, DestinationCode1] = await Promise.all([
+                  this.location.find({ Code: SegmentsData.OriginCode }),
+                  this.location.find({ Code: SegmentsData.DestinationCode })
+                ]);
+
+                const OriginCity = OriginCode1[0].city;
+                const OriginName = OriginCode1[0].name;
+                const DestinationCity = DestinationCode1[0].city;
+                const DestinationName = DestinationCode1[0].name;
+                
                 return {
-                    //...passenger,
-                    //OriginCity: OriginCity,
-                    OriginCode: Coupons.SegmentSold.OriginCode,
-                    //OriginName: OriginName,
-                    DestinationCode: Coupons.SegmentSold.DestinationCode,
-                    //DestinationCity:DestinationCity,
-                    //DestinationName:DestinationName,
+                  refSeg:refSeg,
+                    //OriginCode: Coupons.SegmentSold.OriginCode,
+                    //DestinationCode: Coupons.SegmentSold.DestinationCode,
+                    OriginCode: SegmentsData.OriginCode,
+                    OriginCity: OriginCity,
+                    OriginName: OriginName,
+                    DestinationCode: SegmentsData.DestinationCode,
+                    DestinationCity:DestinationCity,
+                    DestinationName:DestinationName,
+                    DepartureDate: localeDateString(SegmentsData.FlightInfo.DepartureDate),
+                    OrginDepartureTime:formattedTime(SegmentsData.FlightInfo.DepartureDate),
+                    DestinationArrivalTime:formattedTime(SegmentsData.FlightInfo.ArrivalDate),
+                    ArrivalDate: localeDateString(SegmentsData.FlightInfo.ArrivalDate),
+                    OriginAirportTerminal: SegmentsData.FlightInfo.OriginAirportTerminal,
+                    DestinationAirportTerminal: SegmentsData.FlightInfo.DestinationAirportTerminal,
+                    Duration:formatDuration(SegmentsData.FlightInfo.DurationMinutes),
                     RefPassenger:passenger.RefPassenger,
                     RefETTicketFare:passenger.RefETTicketFare,
                     PassengerQuantity:passenger.PassengerInfo.PassengerQuantity,
@@ -2287,9 +2379,8 @@ class BookingService {
                     CivilityCode:passenger.PassengerInfo.NameElement.CivilityCode,
                     Firstname:passenger.PassengerInfo.NameElement.Firstname,
                     Surname:passenger.PassengerInfo.NameElement.Surname,
-                    Seat:'',
+                    Seat: SeatData ? SeatData[0].Text : null,
                     BookingReference:passenger.DocumentNumber,
-                    CouponOrders:couponOrderObjects,
                     Coupons:passenger.Coupons,
                     GateNumber:'',
                     TicketNumber:passenger.DocumentNumber,
@@ -2298,12 +2389,13 @@ class BookingService {
                     QrImage: 'https://tstws2.ttinteractive.com/'+httpLinks[0]+'&boardingPassFormatCode=QRCode',
                     FlightNumber: Coupons.SegmentSold.FlightInfo.OperatingAirlineDesignator+'-'+Coupons.SegmentSold.FlightInfo.FlightNumber,
                     AircraftType: Coupons.SegmentSold.FlightInfo.EquipmentText,
-                    WebClass:'',
+                    WebClass:'Business',
                     BoardingTime:'',
-                    RefuelingStop:'',
+                    SpecialServices:associatedSpecialServiceCodes.join(', '),
+                    RefuelingStop:Segments[0].FlightInfo.Remarks,
                     TicketPrintHttpLink:'https://tstws2.ttinteractive.com/'+TicketPrintHttpLink,
                 };
-            });
+            }));
             
             dataModify.PassengersDetailsCheckin  =  passengersWithHttpLinks;
         }
@@ -2378,7 +2470,6 @@ class BookingService {
               if(CheckinStatusArr){
                 let CheckinStatusOrgDes = CheckinStatusArr.CheckinStatus;
               }
-               
 
               // Update RefSegment based on CouponOrder
               dataModify.PassengersChackin.forEach(item => {
@@ -2421,25 +2512,7 @@ class BookingService {
               };
               dataModify.OriginDestination.push(OriginDestination);
               dataModify.PnrInformation = PnrInformation;
-              // if(method=='Checkin00' ){
-              //   for (const  passCheckIn in passengersWithHttpLinks) {
-
-              //     passengersWithHttpLinks[passCheckIn].OriginCode =  Segments[seg].OriginCode,
-              //     passengersWithHttpLinks[passCheckIn].OriginCity = OriginCity,
-              //     passengersWithHttpLinks[passCheckIn].OriginName = OriginName,
-              //     passengersWithHttpLinks[passCheckIn].DestinationCode = Segments[seg].DestinationCode,
-              //     passengersWithHttpLinks[passCheckIn].DestinationCity = DestinationCity,
-              //     passengersWithHttpLinks[passCheckIn].DestinationName = DestinationName,
-              //     passengersWithHttpLinks[passCheckIn].DepartureDate =  localeDateString(Segments[seg].FlightInfo.DepartureDate),
-              //     passengersWithHttpLinks[passCheckIn].OrginDepartureTime = formattedTime(Segments[seg].FlightInfo.DepartureDate),
-              //     passengersWithHttpLinks[passCheckIn].DestinationArrivalTime = formattedTime(Segments[seg].FlightInfo.ArrivalDate),
-              //     passengersWithHttpLinks[passCheckIn].ArrivalDate = localeDateString(Segments[seg].FlightInfo.ArrivalDate),
-              //     passengersWithHttpLinks[passCheckIn].OriginAirportTerminal = Segments[seg].FlightInfo.OriginAirportTerminal,
-              //     passengersWithHttpLinks[passCheckIn].DestinationAirportTerminal = Segments[seg].FlightInfo.DestinationAirportTerminal,
-                  
-              //     dataModify.PassengersDetailsCheckin.push(passengersWithHttpLinks[passCheckIn]);
-              //   }
-              // } 
+              
             }  
           }
           if(method=='CreateBooking'){
@@ -2462,9 +2535,9 @@ class BookingService {
           }  
           
     }else{
-      if (res.data.ResponseInfo.Error.Message) { 
-        throw new HttpException(400,res.data.ResponseInfo.Error.Message);
-      }
+      // if (res.data.ResponseInfo.Error.Message) { 
+      //   throw new HttpException(400,res.data.ResponseInfo.Error.Message);
+      // }
     }
     return dataModify;
   }
