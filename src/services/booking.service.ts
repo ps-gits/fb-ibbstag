@@ -2354,7 +2354,8 @@ class BookingService {
                 const OriginName = OriginCode1[0].name;
                 const DestinationCity = DestinationCode1[0].city;
                 const DestinationName = DestinationCode1[0].name;
-                
+                 const FareBasisCode = ETTicketFares[0].OriginDestinationFares[0].CouponFares[0].FareBasisCode;
+                const secondCharacter = FareBasisCode[1];
                 return {
                   refSeg:refSeg,
                     //OriginCode: Coupons.SegmentSold.OriginCode,
@@ -2393,6 +2394,7 @@ class BookingService {
                     BoardingTime:'',
                     SpecialServices:associatedSpecialServiceCodes.join(', '),
                     RefuelingStop:Segments[0].FlightInfo.Remarks,
+                    FareBasisCode:secondCharacter,
                     TicketPrintHttpLink:'https://tstws2.ttinteractive.com/'+TicketPrintHttpLink,
                 };
             }));

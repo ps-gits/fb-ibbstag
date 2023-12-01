@@ -76,6 +76,21 @@ export const toISOString = (departureDateString: string): string => {
     const day = String(dateObject.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
+
+/**
+ * @method toStringtoDate
+ * @param {number } length
+ * @returns {Boolean} true & false
+ * @description this value is Empty Check
+ */
+export const toStringtoDate = (dateString: string): string => {
+  if(dateString){
+    const [day, month, year] = dateString.split('-');
+    return `${year}-${month}-${day}T00:00:00`;
+  }else{
+    return ;
+  }
+}
 /**
  * @method formattedTime
  * @param {string } length
