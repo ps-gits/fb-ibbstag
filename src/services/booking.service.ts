@@ -23,7 +23,7 @@ class BookingService {
   public specialServiceCode     = specialServiceCodeModel;
   public bookingHistory         = bookingHistoryModel;
 
-  public async createBooking(bookingData: CreateBookingDto): Promise<Booking> {
+  public async createBooking(bookingData: CreateBookingDto,userId: string,RefCustomer:string): Promise<Booking> {
     if (isEmpty(bookingData)) throw new HttpException(400, 'booking request Data is empty'); 
     const BookingData = new Promise(async (resolve, reject) => {
       try {
@@ -38,6 +38,7 @@ class BookingService {
             FareInfo:result.FareInfo,
             Passengers:result.Passengers,
             DeferredIssuance:true,
+            RefCustomer: RefCustomer,
             RequestInfo: {
               AuthenticationKey: API_KEY,
               CultureName: 'en-GB'
@@ -47,7 +48,7 @@ class BookingService {
           };
           //resolve(requestData);
           var marketingInfo = bookingData.booking[0].PassengerDetails.marketingInfo;
-          let dataModify : Booking = await this.Responce(requestData,'CreateBooking',marketingInfo);
+          let dataModify : Booking = await this.Responce(requestData,'CreateBooking',marketingInfo,userId);
           resolve(dataModify);
       } catch (error) {
         reject(error);
@@ -465,6 +466,7 @@ class BookingService {
               if(lastTwoChars=='ML'){
                 optspecial.fields.push(myObj);
               }
+              
             
             // const filteredData = EMDTicketFareOptions.filter((item) => {
             //   return  item.AssociatedSpecialServiceCode === OptionalSpecialServices[key1].Code;
@@ -482,7 +484,7 @@ class BookingService {
             // }
           }
         } 
-        dataPer.MealsDetails.push(optspecial);
+        dataPer.MealsDetails.push(optspecial); 
       }
     }else{
       if (res.data.ResponseInfo.Error.Message) throw new HttpException(400, res.data.ResponseInfo.Error.Message); 
@@ -499,7 +501,7 @@ class BookingService {
           const requestData = {
               request: {
                 UniqueID:{
-                  TypeCode: loadBookingData.TypeCode,
+                  TypeCode:'PnrCode',
                   ID: loadBookingData.ID
                 },
                 IncludeFareRules: true,
@@ -515,7 +517,9 @@ class BookingService {
                 },
               }
           };
+          //resolve(requestData);
           let data : Booking = await this.Responce(requestData,'LoadBooking');
+          //resolve(requestData);
           resolve(data);
       } catch (error) {
         reject(error);
@@ -880,7 +884,8 @@ class BookingService {
             PassengerName: prepareCancelBookingData.PassengerName
         },
         CancelSettings: {
-          RefundSettings:{}
+          //RefundSettings:{}
+          CancelSegmentSettings:{}
         },  
         
         RequestInfo: {
@@ -891,6 +896,7 @@ class BookingService {
       }
     };
     let res =  await axios.post(URL, requestData);
+   // return res.data;
     let data = {
       Passengers: {},
       Amount:{},
@@ -900,7 +906,7 @@ class BookingService {
     if(res.data.Booking != null){
       let response  = res.data;
       let FareInfo =  response.Booking.FareInfo;
-      var SaleCurrencyAmountToRefund = response.FareInfo.SaleCurrencyAmountToRefund;
+     // var SaleCurrencyAmountToRefund = response.FareInfo.SaleCurrencyAmountToRefund;
       var Segments                = response.Booking.Segments;
       var ETTicketFares           = FareInfo.ETTicketFares;
       var PassengersA             = response.Booking.Passengers;
@@ -927,8 +933,8 @@ class BookingService {
           "DiscountAmount":0,
           "BaseAmount": 0,
           "TaxAmount": 0,
-          "TotalAmount": SaleCurrencyAmountToRefund.TotalAmount,
-          "MilesAmount": SaleCurrencyAmountToRefund.MilesAmount,
+          "TotalAmount":0,// SaleCurrencyAmountToRefund.TotalAmount,
+          "MilesAmount":0,// SaleCurrencyAmountToRefund.MilesAmount,
           "SaleCurrencyCode":SaleCurrencyCode,
           "Extensions": null
         };
@@ -2144,10 +2150,9 @@ class BookingService {
     return responce;
   }
   
-  async Responce(requestData: any,method:any,marketingInfo:false): Promise<any> {
+  async Responce(requestData: any,method:any,marketingInfo:false,userId:string): Promise<any> {
     var URL = API_URL+method+'?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
     let res =  await axios.post(URL, requestData);
-
     let dataModify = {
       PassengersDetails: [],
       PassengersDetailsCheckin: [],
@@ -2272,6 +2277,11 @@ class BookingService {
 
          
         var  PassengersA      = response.Passengers;
+        var RefCustomer = response.PnrInformation.RefCustomer
+        if(RefCustomer==null)
+        {
+          response.PnrInformation.PartnerInformation.HasPartners = true;
+        }
         var  PnrInformation   = response.PnrInformation;
         let  PassengerQuantityChild  = 0;
         let  PassengerQuantityAdult  = 0;
@@ -2530,11 +2540,37 @@ class BookingService {
               destinationDate: localeDateString(Segments[0].FlightInfo.DepartureDate),	
               isTicket:false,
               email:email.Text,
-              marketingInfo:marketingInfo
+              marketingInfo:marketingInfo,
+              userId: userId,
             };	
           
             this.bookingHistory.insertMany(BookingHistory);
           }  
+
+          if(method=='LoadBooking'){
+            let email = SpecialServices.find(item => item.Code === 'CTCE');
+              const query = { 'pnrcode': PnrInformation.PnrCode }; 
+              const BookingVal = await this.bookingHistory.findOne(query);
+
+              if(BookingVal==null){
+                let BookingHistory = {  
+                pnrcode:PnrInformation.PnrCode, 
+                name: PassengersA[0].NameElement.Firstname, 
+                surname:PassengersA[0].NameElement.Surname, 
+                originCode: Segments[0].OriginCode, 
+                destinationCode: Segments[0].DestinationCode, 
+                originDate:localeDateString(Segments[0].FlightInfo.ArrivalDate),  
+                destinationDate: localeDateString(Segments[0].FlightInfo.DepartureDate),  
+                isTicket:false,
+                email:email.Text,
+                marketingInfo:marketingInfo,
+                userId: userId,
+              };  
+              this.bookingHistory.insertMany(BookingHistory);
+            }
+          
+            
+          } 
           
     }else{
       // if (res.data.ResponseInfo.Error.Message) { 
