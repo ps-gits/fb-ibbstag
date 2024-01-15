@@ -4,7 +4,7 @@ import { Search } from '@interfaces/search.interface';
 import eligibleOriginDestinationsModel from '@models/eligibleOriginDestinations.model';
 import specialServiceCodeModel from '@models/specialServiceCode.model';
 import locationModel from '@models/location.model';
-import { isEmpty,localeDateString,toISOString,formattedTime,extractKeyValuePairs } from '@utils/util';
+import { isEmpty,localeDateString,toISOString,formattedTime,extractKeyValuePairs,parseChildren,formatDuration} from '@utils/util';
 import { API_URL,API_KEY} from '@config';
 import { length } from 'class-validator';
 const axios = require('axios');
@@ -171,9 +171,11 @@ class SearchService {
       let dataPer = {
       PassengersDetails: [], 
       MealsDetails:[],
+      SPReqDetails:[],
       Passengers:[],
       SeatMaps:[],
       EMDTicketFareOptions:[],
+      FareRules:{},
       res:res.data
     };
     
@@ -184,6 +186,15 @@ class SearchService {
       var SeatMaps          =  res.data.SeatMaps;
       var EMDTicketFareOptions  =  res.data.FareInfo.EMDTicketFareOptions;
       var ETTicketFares         =  res.data.FareInfo.ETTicketFares;
+      var FareRules         =  res.data.FareInfo.FareRules;
+      if(FareRules.length > 0){
+          dataPer.FareRules = FareRules.map(rule => ({
+            Text: rule.FareConditionText.Text,
+            Value: rule.FareConditionText.Value,
+            Children: parseChildren(rule.FareConditionText.Children),
+            Extensions: null
+          }));
+      }
       dataPer.Passengers    =  Passengers;
       dataPer.SeatMaps = SeatMaps;
       dataPer.EMDTicketFareOptions = EMDTicketFareOptions;
@@ -234,6 +245,9 @@ class SearchService {
         let optspecial = {
           fields:[]
         };
+        let sprspecial = {
+          fields:[]
+        };
         for (const  key1 in SpecialServices) {
          /* const RefPassengerAd = (parseInt(pass, 10)+parseInt('1', 10)).toString(); */
          
@@ -276,6 +290,10 @@ class SearchService {
               if(lastTwoChars=='ML'){
                 optspecial.fields.push(myObj);
               }
+
+              if(Code=='WCHR' || Code=='BLND'){
+                sprspecial.fields.push(myObj);
+              }
              
             //   const filteredData = EMDTicketFareOptions.filter((item) => {
             //     return  item.AssociatedSpecialServiceCode === OptionalSpecialServices[key1].Code;
@@ -295,6 +313,7 @@ class SearchService {
           }
         } 
          dataPer.MealsDetails.push(optspecial);
+         dataPer.SPReqDetails.push(sprspecial);
       } 
     }  
     //let data = res.data;
@@ -505,7 +524,7 @@ class SearchService {
           var  OriginCode      = OriginDestinationsRes[0].OriginCode;
           var  DestinationCode = OriginDestinationsRes[0].DestinationCode;
           for (const seg of Segments) {
-            //for (const OriKey in OriginDestinationsRes) {
+            //for (Segments[seg].BookingClass.StatusCode!=='XX') {
               if (seg.OriginCode === OriginDestinationsRes[0].OriginCode &&
                   seg.DestinationCode === OriginDestinationsRes[0].DestinationCode &&
                   oriIncre === 0) {
@@ -531,7 +550,7 @@ class SearchService {
                   FlightNumber: seg.FlightInfo.OperatingAirlineDesignator+'-'+seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
-                  Duration:seg.FlightInfo.DurationMinutes,
+                  Duration:formatDuration(seg.FlightInfo.DurationMinutes),
                   Meal:'',
                   Seat:'',
                   Terminal:'',
@@ -552,7 +571,7 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
-                  Duration:seg.FlightInfo.DurationMinutes,
+                  Duration:formatDuration(seg.FlightInfo.DurationMinutes),
                   Meal:'',
                   Seat:'',
                   Terminal:'',
@@ -573,7 +592,7 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
-                  Duration:seg.FlightInfo.DurationMinutes,
+                  Duration:formatDuration(seg.FlightInfo.DurationMinutes),
                   Meal:'',
                   Seat:'',
                   Terminal:'',
@@ -610,7 +629,7 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
-                  Duration:seg.FlightInfo.DurationMinutes,
+                  Duration:formatDuration(seg.FlightInfo.DurationMinutes),
                   Meal:'',
                   Seat:'',
                   Terminal:'',
@@ -631,7 +650,7 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
-                  Duration:seg.FlightInfo.DurationMinutes,
+                  Duration:formatDuration(seg.FlightInfo.DurationMinutes),
                   Meal:'',
                   Seat:'',
                   Terminal:'',
@@ -653,7 +672,7 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
-                  Duration:seg.FlightInfo.DurationMinutes,
+                  Duration:formatDuration(seg.FlightInfo.DurationMinutes),
                   Meal:'',
                   Seat:'',
                   Terminal:'',
@@ -846,6 +865,7 @@ class SearchService {
     let dataPer = {
       PassengersDetails: [], 
       MealsDetails:[],
+      SPReqDetails:[],
       Passengers:[],
       SeatMaps:[],
       EMDTicketFareOptions:[]
@@ -907,6 +927,10 @@ class SearchService {
         let optspecial = {
           fields:[]
         };
+        let sprspecial = {
+          fields:[]
+        };
+        
         for (const  key1 in SpecialServices) { 
           if(SpecialServices[key1].RefPassenger==Passengers[pass].Ref)
           {  
@@ -966,10 +990,14 @@ class SearchService {
               if(lastTwoChars=='ML'){
                 optspecial.fields.push(myObj);
               }
+               if(Code=='WCHR' || Code=='BLND'){
+                sprspecial.fields.push(myObj);
+              }
               
           }
         } 
          dataPer.MealsDetails.push(optspecial);
+         dataPer.SPReqDetails.push(sprspecial);
       }
     }   
     return dataPer;
@@ -1181,7 +1209,7 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
-                  Duration:seg.FlightInfo.DurationMinutes,
+                  Duration:formatDuration(seg.FlightInfo.DurationMinutes),
                   Meal:'',
                   Seat:'',
                   Terminal:'',
@@ -1203,7 +1231,7 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
-                  Duration:seg.FlightInfo.DurationMinutes,
+                  Duration:formatDuration(seg.FlightInfo.DurationMinutes),
                   Meal:'',
                   Seat:'',
                   Terminal:'',
@@ -1225,7 +1253,7 @@ class SearchService {
                   FlightNumber:seg.FlightInfo.FlightNumber,
                   Stops:seg.FlightInfo.Stops,
                   Remarks:seg.FlightInfo.Remarks,
-                  Duration:seg.FlightInfo.DurationMinutes,
+                  Duration:formatDuration(seg.FlightInfo.DurationMinutes),
                   Meal:'',
                   Seat:'',
                   Terminal:'',
@@ -1262,7 +1290,7 @@ class SearchService {
                     FlightNumber:seg.FlightInfo.FlightNumber,
                     Stops:seg.FlightInfo.Stops,
                     Remarks:seg.FlightInfo.Remarks,
-                    Duration:seg.FlightInfo.DurationMinutes,
+                    Duration:formatDuration(seg.FlightInfo.DurationMinutes),
                     Meal:'',
                     Seat:'',
                     Terminal:'',
@@ -1284,7 +1312,7 @@ class SearchService {
                     FlightNumber:seg.FlightInfo.FlightNumber,
                     Stops:seg.FlightInfo.Stops,
                     Remarks:seg.FlightInfo.Remarks,
-                    Duration:seg.FlightInfo.DurationMinutes,
+                    Duration:formatDuration(seg.FlightInfo.DurationMinutes),
                     Meal:'',
                     Seat:'',
                     Terminal:'',
@@ -1306,7 +1334,7 @@ class SearchService {
                     FlightNumber:seg.FlightInfo.FlightNumber,
                     Stops:seg.FlightInfo.Stops,
                     Remarks:seg.FlightInfo.Remarks,
-                    Duration:seg.FlightInfo.DurationMinutes,
+                    Duration:formatDuration(seg.FlightInfo.DurationMinutes),
                     Meal:'',
                     Seat:'',
                     Terminal:'',

@@ -13,8 +13,16 @@ class BookingController {
 
   public createBooking = async (req: Request, res: Response, next: NextFunction) => {
     try {
+
+      let User: string = "";
+      let RefCustomer: string = "";
+      if (req.user) {
+        User = req.user._id;
+        RefCustomer = req.user.Ref;
+      }
+      //res.status(200).json({ data: User, message: 'Booking Result',status : 200 });
       const boookingData: CreateBookingDto = req.body;
-      const CreateBookingData: Booking = await this.BookingService.createBooking(boookingData);
+      const CreateBookingData: Booking = await this.BookingService.createBooking(boookingData,User,RefCustomer);
       res.status(200).json({ data: CreateBookingData, message: 'Booking Result',status : 200 });
     } catch (error) {
       next(error);

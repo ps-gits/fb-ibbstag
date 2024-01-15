@@ -2,6 +2,7 @@ import { model, Schema, Document } from 'mongoose';
 import { BookingHistory } from '@interfaces/booking.interface';
 
 const bookingHistorySchema: Schema = new Schema({
+    userId: { type: String },
     pnrcode:{ type: String ,required: true},
     name: { type: String ,required: true},
     email: { type: String },

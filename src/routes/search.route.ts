@@ -14,17 +14,17 @@ class SearchRoute implements Routes {
     this.initializeRoutes();
   } 
   private initializeRoutes() {
-      this.router.post(`${this.path}prepareFlights`, this.searchController.prepareFlights); 
-      this.router.post(`${this.path}searchFlight`, this.searchController.searchFlight); 
+      this.router.post(`${this.path}prepareFlights`,authMiddleware, this.searchController.prepareFlights); 
+      this.router.post(`${this.path}searchFlight`,authMiddleware, this.searchController.searchFlight); 
       
-      this.router.post(`${this.path}prepareExchangeFlights`, this.searchController.prepareExchangeFlights); 
-      this.router.post(`${this.path}searchExchangeFlight`, this.searchController.searchExchangeFlight); 
+      this.router.post(`${this.path}prepareExchangeFlights`,authMiddleware, this.searchController.prepareExchangeFlights); 
+      this.router.post(`${this.path}searchExchangeFlight`,authMiddleware, this.searchController.searchExchangeFlight); 
 
-      this.router.get(`${this.path}getOrigin`, this.commonController.getLocation);
-      this.router.get(`${this.path}getCountry`, this.commonController.getCountry);
-      this.router.post(`${this.path}getDestinations`, this.commonController.getDestination);
-      this.router.post(`${this.path}getEligibleOriginDestinations`, this.commonController.getEligibleOriginDestinations);
-      this.router.get(`${this.path}compareFairFamily`, this.searchController.compareFairFamily);
+      this.router.get(`${this.path}getOrigin`,authMiddleware, this.commonController.getLocation);
+      this.router.get(`${this.path}getCountry`,authMiddleware, this.commonController.getCountry);
+      this.router.post(`${this.path}getDestinations`,authMiddleware, this.commonController.getDestination);
+      this.router.post(`${this.path}getEligibleOriginDestinations`,authMiddleware, this.commonController.getEligibleOriginDestinations);
+      this.router.get(`${this.path}compareFairFamily`,authMiddleware, this.searchController.compareFairFamily);
      
       
     }

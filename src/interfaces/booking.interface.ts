@@ -31,6 +31,7 @@ export class Payment{
 
 
 export interface BookingHistory{
+  userId: string;
   _id: string;
   pnrcode:string;
   name: string;

@@ -136,6 +136,7 @@ class BookingService {
       PassengersDetails: [],
       PassengersDetailsForCheckin:[], 
       MealsDetails:[],
+      SPReqDetails:[],
       Passengers:[],
       SeatMaps:[],
       EMDTicketFareOptions:[],
@@ -282,6 +283,9 @@ class BookingService {
           fields:[]
         };
         let optspecial = {
+          fields:[]
+        };
+        let sprspecial = {
           fields:[]
         };
 
@@ -466,7 +470,9 @@ class BookingService {
               if(lastTwoChars=='ML'){
                 optspecial.fields.push(myObj);
               }
-              
+              if(Code=='WCHR' || Code=='BLND'){
+                sprspecial.fields.push(myObj);
+              }
             
             // const filteredData = EMDTicketFareOptions.filter((item) => {
             //   return  item.AssociatedSpecialServiceCode === OptionalSpecialServices[key1].Code;
@@ -484,7 +490,8 @@ class BookingService {
             // }
           }
         } 
-        dataPer.MealsDetails.push(optspecial); 
+        dataPer.MealsDetails.push(optspecial);
+        dataPer.SPReqDetails.push(sprspecial);
       }
     }else{
       if (res.data.ResponseInfo.Error.Message) throw new HttpException(400, res.data.ResponseInfo.Error.Message); 
@@ -934,7 +941,7 @@ class BookingService {
           "BaseAmount": 0,
           "TaxAmount": 0,
           "TotalAmount":0,// SaleCurrencyAmountToRefund.TotalAmount,
-          "MilesAmount":0,// SaleCurrencyAmountToRefund.MilesAmount,
+          "MilesAmount":9,// SaleCurrencyAmountToRefund.MilesAmount,
           "SaleCurrencyCode":SaleCurrencyCode,
           "Extensions": null
         };
@@ -1479,6 +1486,27 @@ class BookingService {
         });
         
       }
+          const Passengers = [];
+          const obj = CheckinBookingData.booking;
+          for (const  key in obj) { 
+              var PassengerDetailsObj = obj[key].PassengerDetails;
+              var RefPassenger = PassengerDetailsObj.Ref;
+              
+              const newPassengerObjs = {
+                Ref: RefPassenger,
+                RefClient: "P"+key,
+                PassengerQuantity: 1,
+                PassengerTypeCode: PassengerDetailsObj.PassengerType,
+                NameElement: {
+                  CivilityCode: PassengerDetailsObj.CivilityCode,
+                  Firstname: PassengerDetailsObj.Firstname,
+                  Surname: PassengerDetailsObj.Surname,
+                },
+                Extensions: [],
+                
+              };
+              Passengers.push(newPassengerObjs);
+          }
           const requestData = {
             request: {
               UniqueID:{
@@ -1486,7 +1514,7 @@ class BookingService {
                 ID: CheckinBookingData.ID
               },
               ETTicketTargets:resultArray,
-
+              Passengers: Passengers,
               Verification:  {
                   PassengerName: CheckinBookingData.PassengerName
               },
@@ -1716,6 +1744,11 @@ class BookingService {
 
     var MealsDeparture  =  bookingData.MealsDetails.departure;
     var MealsArrival    =  bookingData.MealsDetails.arrival; 
+
+    var SpecialRequestDeparture  =  bookingData.SpecialRequestDetails.departure;
+    var SpecialRequestArrival    =  bookingData.SpecialRequestDetails.arrival; 
+
+    
     var BaggageDeparture  =  '';
     var BaggageArrival    = '';
     if(method =='ModifyBooking')
@@ -2277,12 +2310,14 @@ class BookingService {
 
          
         var  PassengersA      = response.Passengers;
-        var RefCustomer = response.PnrInformation.RefCustomer
+        var RefCustomer = response.PnrInformation.RefCustomerl
+
         if(RefCustomer==null)
         {
           response.PnrInformation.PartnerInformation.HasPartners = true;
         }
         var  PnrInformation   = response.PnrInformation;
+        dataModify.PnrInformation = PnrInformation;
         let  PassengerQuantityChild  = 0;
         let  PassengerQuantityAdult  = 0;
         if(method=='Checkin' || method=='PrepareCheckin111'){
@@ -2390,7 +2425,7 @@ class BookingService {
                     CivilityCode:passenger.PassengerInfo.NameElement.CivilityCode,
                     Firstname:passenger.PassengerInfo.NameElement.Firstname,
                     Surname:passenger.PassengerInfo.NameElement.Surname,
-                    Seat: SeatData ? SeatData[0].Text : null,
+                    Seat: SeatData ? SeatData[0]?.Text : null,
                     BookingReference:passenger.DocumentNumber,
                     Coupons:passenger.Coupons,
                     GateNumber:'',
@@ -2539,7 +2574,7 @@ class BookingService {
               originDate:localeDateString(Segments[0].FlightInfo.ArrivalDate),	
               destinationDate: localeDateString(Segments[0].FlightInfo.DepartureDate),	
               isTicket:false,
-              email:email.Text,
+              email:email?.Text,
               marketingInfo:marketingInfo,
               userId: userId,
             };	
@@ -2562,7 +2597,7 @@ class BookingService {
                 originDate:localeDateString(Segments[0].FlightInfo.ArrivalDate),  
                 destinationDate: localeDateString(Segments[0].FlightInfo.DepartureDate),  
                 isTicket:false,
-                email:email.Text,
+                email:email?.Text,
                 marketingInfo:marketingInfo,
                 userId: userId,
               };  
@@ -2573,9 +2608,9 @@ class BookingService {
           } 
           
     }else{
-      // if (res.data.ResponseInfo.Error.Message) { 
-      //   throw new HttpException(400,res.data.ResponseInfo.Error.Message);
-      // }
+      if (res.data.ResponseInfo.Error.Message) { 
+        throw new HttpException(400,res.data.ResponseInfo.Error.Message);
+      }
     }
     return dataModify;
   }

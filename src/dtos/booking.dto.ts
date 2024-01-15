@@ -53,6 +53,11 @@ export class MealsDetails {
   public arrival: any[];
   public departure: any[];
 }
+
+export class SpecialRequestDetails {
+  public arrival: any[];
+  public departure: any[];
+}
 export class BaggegeDetails {
   public arrival: any[];
   public departure: any[];
@@ -70,6 +75,8 @@ export class CreateBookingDto {
   public SeatMap:SeatMap; 
   @IsObject()
   public MealsDetails:MealsDetails;
+  @IsObject()
+  public SpecialRequestDetails:SpecialRequestDetails;
   @ArrayUnique()
   public EMDTicketFareOptions: EMDTicketFareOptions[];
  // @ArrayUnique()
@@ -112,7 +119,9 @@ export class CreateBookingExchangeDto {
   @IsObject()
   public SeatMap:SeatMap; 
   @IsObject()
-  public MealsDetails:MealsDetails;
+  public MealsDetails:MealsDetails; 
+  @IsObject()
+  public SpecialRequestDetails:SpecialRequestDetails;
 } 
 
 export class loadBookingDto {
@@ -151,7 +160,8 @@ export class ModifyBookingDto {
   public SeatMap:SeatMap; 
   @IsObject()
   public MealsDetails:MealsDetails;
-
+  @IsObject()
+  public SpecialRequestDetails:SpecialRequestDetails;
   @IsObject()
   public BaggageDetails:BaggageDetails;
 
@@ -300,6 +310,8 @@ export class PrepareCancelBookingDto {
 
   @IsString()
   public PassengerName: string; 
+  @IsBoolean()
+  public HasPartners: boolean; 
   
 }
 

@@ -15,7 +15,7 @@ class UserService {
   public async updateUser(userId: string, userData: UpdateUserDto): Promise<ProfileData> {
     if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
     if (userData.Login) {
-      const findUser: ProfileData = await this.users.findOne({ Login: userData.Login });
+      const findUser: ProfileData = await this.users.findOne({ Login: userId.Login });
       if (!findUser) throw new HttpException(400, 'This account not found.');
     } 
     var URL = API_URL+'UpdateCustomer';
@@ -42,14 +42,14 @@ class UserService {
           }
         };
         axios.post(URL, requestData);
-        this.users.updateOne({ "Login": userData[0].Login },{$set: userData[0]});
+        this.users.updateOne({ "Login": userId.Login },{$set: userData[0]});
         // Delete documents that match a specific condition
         const deleteResult = await this.userMembers.deleteMany({
           "Login": userData[0].Login
         });
         // Insert new documents
         await this.userMembers.insertMany(userData); 
-        const findUser1: ProfileData = await this.userMembers.find({ Login: userData[0].Login });
+        const findUser1: ProfileData = await this.userMembers.find({ Login: userId.Login });
         if (isEmpty(findUser1)) throw new HttpException(400, 'Member data not found');
         return findUser1;
       } catch (error) { 
@@ -81,7 +81,7 @@ class UserService {
   }
   public async bookingHistory(userId: string): Promise<BookingHistory> {
      
-    if (isEmpty(userId)) throw new HttpException(400, 'userData is empty');
+    // if (isEmpty(userId)) throw new HttpException(400, 'userData is empty');
           
         let data: {
           active: any[];  
@@ -93,7 +93,20 @@ class UserService {
         const month = String(currentDate.getMonth() + 1).padStart(2, '0');
         const day = String(currentDate.getDate()).padStart(2, '0'); 
         const formattedDate = `${year}-${month}-${day}`;
-        const pastBookingHistories = await this.bookingHistoryModel.find({ destinationDate: { $lt: formattedDate } });
+        const pastBookingHistories = await this.bookingHistoryModel.find({
+                $and: [
+                  { destinationDate: { $lt: formattedDate } },
+                  { userId: userId }
+                ]
+              });
+
+        const gratterBookingHistories = await this.bookingHistoryModel.find({
+                $and: [
+                  { destinationDate: { $gt: formattedDate } },
+                  { userId: userId }
+                ]
+              }); 
+
         const BookingHistories = pastBookingHistories.map((bookingHistory) => {
         const originDate = localeDateString(bookingHistory.originDate); 
         const destinationDate = localeDateString(bookingHistory.destinationDate); 
@@ -104,8 +117,21 @@ class UserService {
           passenger:0
         };
       });
+
+        const gtBookingHistories = gratterBookingHistories.map((bookingHistorygt) => {
+        const originDate = localeDateString(bookingHistorygt.originDate); 
+        const destinationDate = localeDateString(bookingHistorygt.destinationDate); 
+        return {
+          ...bookingHistorygt.toObject(),
+          originDate: originDate,
+          destinationDate: destinationDate,
+          passenger:0
+        };
+      });
+
+        
       data = {
-        active: BookingHistories,  
+        active: gtBookingHistories,  
         past: BookingHistories,  
         canceled:BookingHistories
       };

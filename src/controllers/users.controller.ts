@@ -2,13 +2,14 @@ import { NextFunction, Request, Response } from 'express';
 import { CreateUserDto,ForgotPasswordDto,UpdateUserDto} from '@dtos/users.dto';
 import { User,CreateUser,UpdateUser,BookingHistory,ProfileData} from '@interfaces/users.interface';
 import userService from '@services/users.service';
-
+import { HttpException } from '@exceptions/HttpException';
 class UsersController {
   public userService = new userService();
  
   public updateUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId: string = req.params.id;
+      if (!req.user) throw new HttpException(400, `This account not found. Please Login again`);
+      const userId: string = req.user;
       const userData: UpdateUserDto = req.body;
       const updateUserData: ProfileData = await this.userService.updateUser(userId, userData);
 
@@ -42,9 +43,9 @@ class UsersController {
 
   public bookingHistory = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId: string = req.params.id; 
+      if (!req.user) throw new HttpException(400, `This account not found. Please Login again`);
+      const userId: string = req.user._id; 
       const BookingHistoryData: BookingHistory = await this.userService.bookingHistory(userId);
-
       res.status(200).json({ data: BookingHistoryData, message: 'History' });
     } catch (error) {
       next(error);
@@ -53,7 +54,8 @@ class UsersController {
 
   public profileData = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId: string = req.params.id; 
+      if (!req.user) throw new HttpException(400, `This account not found. Please Login again`);
+      const userId: string = req.user.Login; 
       const profileData: ProfileData = await this.userService.profileData(userId);
 
       res.status(200).json({ data: profileData, message: 'Profile Data' });
