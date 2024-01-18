@@ -1849,6 +1849,39 @@ class BookingService {
     //   });
       
     // } 
+
+    // Request For Special Service Request
+    if(SpecialRequestArrival.length > 0){
+      SpecialRequestArrival.forEach((Spr) => {
+        let Code = Spr.Code;
+        Code.forEach((Sp,index) => {
+          const SPR = {
+            Text:Spr.Label[index],
+            RefPassenger:Spr.RefPassenger,
+            RefSegment:Spr.RefSegment,
+            Code: Sp
+          } 
+          SpecialServices.push(SPR);
+        });
+      });
+    } 
+    
+    // Request For Special Service Request
+    if(SpecialRequestDeparture.length > 0){
+      SpecialRequestDeparture.forEach((Spr) => {
+        let Code = Spr.Code;
+        Code.forEach((Sp,index) => {
+          const SPR = {
+            Text:Spr.Label[index],
+            RefPassenger:Spr.RefPassenger,
+            RefSegment:Spr.RefSegment,
+            Code: Sp
+          } 
+          SpecialServices.push(SPR);
+        });  
+      });
+    } 
+
     // Request For Meal
     if(MealsArrival.length > 0){
       MealsArrival.forEach((meal) => {
