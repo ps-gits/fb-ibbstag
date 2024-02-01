@@ -847,7 +847,7 @@ class SearchService {
         Verification: { 
           PassengerName:prepareData.PassangerLastname
         },
-         
+        DeferredIssuance:true,
         Offer:{
           RefItinerary:prepareData.RefItinerary,
           Ref:prepareData.Ref,
@@ -1167,9 +1167,7 @@ class SearchService {
               }
             }
           }); 
-          console.log('BagAllowances========1=',BagAllowances[1][0].CouponFares[0].BagAllowances);
-          console.log('BagAllowances========2=',BagAllowances[2][0].CouponFares[0].BagAllowances);
-          console.log('BagAllowances========3=',BagAllowances[3][0].CouponFares[0].BagAllowances);
+           
           for (const key in refWebClassDict) {
               if (refWebClassDict.hasOwnProperty(key)) {
                   const ref = refWebClassDict[key];
@@ -1194,6 +1192,11 @@ class SearchService {
                   var destinationArrivalDate = localeDateString(ArrivalDate);
                   var orginDepartureTime     = formattedTime(DepartureDate);
                   var orginDepartureDate = localeDateString(DepartureDate);
+                  let OBagAllowances =  '';
+                  if (Object.keys(BagAllowances).length >= 1) {
+                     OBagAllowances = BagAllowances[1][0].CouponFares[0].BagAllowances[0];
+                  }
+
                 const faireFmailiesOriginObjO = {
                   orginDepartureDate: orginDepartureDate,
                   orginDepartureTime: orginDepartureTime,
@@ -1201,7 +1204,7 @@ class SearchService {
                   originCity:originCity,
                   luxuryPickup: true,   // either field will not return in response
                   loungeAccess: true,   // either field will not return in response
-                  BagAllowances:BagAllowances[1][0].CouponFares[0].BagAllowances[0],
+                  BagAllowances:OBagAllowances,
                   destinationName: destinationName,
                   destinationCity: destinationCity,
                   destinationArrivalDate: destinationArrivalDate,
@@ -1216,6 +1219,11 @@ class SearchService {
                   AircraftType:seg.FlightInfo.EquipmentText,
                 };
 
+                let BBagAllowances =  '';
+                if (Object.keys(BagAllowances).length >= 2) {
+                   BBagAllowances = BagAllowances[2][0].CouponFares[0].BagAllowances[0];
+                }
+ 
                 const faireFmailiesOriginObjB = {
                   orginDepartureDate: orginDepartureDate,
                   orginDepartureTime: orginDepartureTime,
@@ -1223,7 +1231,7 @@ class SearchService {
                   originCity:originCity,
                   luxuryPickup: true,   // either field will not return in response
                   loungeAccess: true,   // either field will not return in response
-                  BagAllowances:BagAllowances[2][0].CouponFares[0].BagAllowances[0],
+                  BagAllowances:BBagAllowances,
                   destinationName: destinationName,
                   destinationCity: destinationCity,
                   destinationArrivalDate: destinationArrivalDate,
@@ -1237,15 +1245,20 @@ class SearchService {
                   Terminal:'',
                   AircraftType:seg.FlightInfo.EquipmentText,
                 };
-                
+                let DBagAllowances =  '';
+                if (Object.keys(BagAllowances).length >= 3) {
+                   DBagAllowances = BagAllowances[3][0].CouponFares[0].BagAllowances[0];
+                }
+                 
                 const faireFmailiesOriginObjD = {
                   orginDepartureDate: orginDepartureDate,
                   orginDepartureTime: orginDepartureTime,
                   originName: originName,
                   originCity:originCity,
                   luxuryPickup: true,   // either field will not return in response
-                  loungeAccess: true,   // either field will not return in response
-                  BagAllowances:BagAllowances[3][0].CouponFares[0].BagAllowances[0],
+                  loungeAccess: true,
+                     // either field will not return in response
+                  BagAllowances:DBagAllowances,
                   destinationName: destinationName,
                   destinationCity: destinationCity,
                   destinationArrivalDate: destinationArrivalDate,
@@ -1282,7 +1295,7 @@ class SearchService {
                     originCity: destinationCity,
                     luxuryPickup: true,
                     loungeAccess: true,
-                    BagAllowances:BagAllowances[1][1].CouponFares[0].BagAllowances[0],
+                    //BagAllowances:BagAllowances[1][1].CouponFares[0].BagAllowances[0],
                     destinationName: originName,
                     destinationCity: originCity,
                     destinationArrivalDate: destinationArrivalDate ,
@@ -1304,7 +1317,7 @@ class SearchService {
                     originCity: destinationCity,
                     luxuryPickup: true,
                     loungeAccess: true,
-                    BagAllowances:BagAllowances[2][1].CouponFares[0].BagAllowances[0],
+                    //BagAllowances:BagAllowances[2][1].CouponFares[0].BagAllowances[0],
                     destinationName: originName,
                     destinationCity: originCity,
                     destinationArrivalDate: destinationArrivalDate ,
@@ -1326,7 +1339,7 @@ class SearchService {
                     originCity: destinationCity,
                     luxuryPickup: true,
                     loungeAccess: true,
-                    BagAllowances:BagAllowances[3][1].CouponFares[0].BagAllowances[0],
+                    //BagAllowances:BagAllowances[3][1].CouponFares[0].BagAllowances[0],
                     destinationName: originName,
                     destinationCity: originCity,
                     destinationArrivalDate: destinationArrivalDate ,
