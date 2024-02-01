@@ -48,7 +48,7 @@ class BookingService {
           };
           //resolve(requestData);
           var marketingInfo = bookingData.booking[0].PassengerDetails.marketingInfo;
-          let dataModify : Booking = await this.Responce(requestData,'CreateBooking',marketingInfo,userId);
+          let dataModify : Booking = await this.Response(requestData,'CreateBooking',marketingInfo,userId);
           resolve(dataModify);
       } catch (error) {
         reject(error);
@@ -84,7 +84,7 @@ class BookingService {
           }
         };
         //resolve(requestData);
-        let dataModify : Booking = await this.Responce(requestData,'ModifyBooking');
+        let dataModify : Booking = await this.Response(requestData,'ModifyBooking');
         resolve(dataModify);
       } catch (error) {
         reject(error);
@@ -525,7 +525,7 @@ class BookingService {
               }
           };
           //resolve(requestData);
-          let data : Booking = await this.Responce(requestData,'LoadBooking');
+          let data : Booking = await this.Response(requestData,'LoadBooking');
           //resolve(requestData);
           resolve(data);
       } catch (error) {
@@ -608,7 +608,7 @@ class BookingService {
                           }];
                       }
                              
-                        let data = this.Responce(requestData,'CreateTicket');
+                        let data = this.Response(requestData,'CreateTicket');
                         resolve(data);
                     }, 500);
                 } else {
@@ -643,7 +643,7 @@ class BookingService {
                         }
                     }];
                 }          
-                  let data =   this.Responce(requestData,'CreateTicket');
+                  let data =   this.Response(requestData,'CreateTicket');
                   resolve(data);
                 }
             }, 500);
@@ -870,7 +870,7 @@ class BookingService {
               Extensions: null
             }
           };
-          let data : Booking = await this.Responce(requestData,'Cancel');
+          let data : Booking = await this.Response(requestData,'Cancel');
           resolve(data);
       } catch (error) {
         reject(error);
@@ -1260,6 +1260,7 @@ class BookingService {
               TypeCode: "PnrCode",
               ID:bookingData.PnrCode
             },
+            DeferredIssuance:true,
             Verification: { 
               PassengerName:bookingData.PassangerLastname
             },
@@ -1278,8 +1279,9 @@ class BookingService {
             Extensions: null
           }
         };
-       
-        let data : Booking = await  this.Responce(requestData,'Exchange');
+        
+        //resolve(requestData);
+        let data : Booking = await  this.Response(requestData,'Exchange');
         resolve(data);
       } catch (error) {
         reject(error);
@@ -1383,7 +1385,7 @@ class BookingService {
             }
           };
            
-          let data : Booking = await this.Responce(requestData,'PrepareCheckin');
+          let data : Booking = await this.Response(requestData,'PrepareCheckin');
           resolve(data);
       } catch (error) {
         reject(error);
@@ -1529,7 +1531,7 @@ class BookingService {
           };
           
           //resolve(CouponOrderValue[0]);
-          let data : Booking = await this.Responce(requestData,'Checkin');
+          let data : Booking = await this.Response(requestData,'Checkin');
           resolve(data);
       } catch (error) {
         reject(error);
@@ -1559,7 +1561,7 @@ class BookingService {
               },
             }
           };
-          let data : Booking = await this.Responce(requestData,'Uncheck');
+          let data : Booking = await this.Response(requestData,'Uncheck');
           resolve(data);
       } catch (error) {
         reject(error);
@@ -1622,7 +1624,7 @@ class BookingService {
             }
           };
        
-      return await this.Responce(requestData,'ModifyBooking');
+      return await this.Response(requestData,'ModifyBooking');
     }else{
       return true;
     }
@@ -1718,7 +1720,7 @@ class BookingService {
             dataModify.FlightSummaries.push(PairCity);
           }
             ///resolve(requestData);
-            //let data : Booking = await  this.Responce(requestData,'FlightStatus');
+            //let data : Booking = await  this.Response(requestData,'FlightStatus');
             resolve(dataModify);
       } catch (error) {
         reject(error);
@@ -2216,7 +2218,7 @@ class BookingService {
     return responce;
   }
   
-  async Responce(requestData: any,method:any,marketingInfo:false,userId:string): Promise<any> {
+  async Response(requestData: any,method:any,marketingInfo:false,userId:string): Promise<any> {
     var URL = API_URL+method+'?TimeZoneHandling=Ignore&DateFormatHandling=ISODateFormat';
     let res =  await axios.post(URL, requestData);
     let dataModify = {
@@ -2280,13 +2282,18 @@ class BookingService {
               });
             });
           });
-          
-            var CheckinStatusResult = await Object.values(dataModify.PassengersChackin.reduce((acc, item) => {
-                const { CheckinStatus, CouponOrder } = item;
-                acc[CouponOrder] = acc[CouponOrder] || { CheckinStatus: false, CouponOrder };
-                acc[CouponOrder].CheckinStatus = acc[CouponOrder].CheckinStatus || CheckinStatus;
-                return acc;
-            }, {})).filter(item => item.CheckinStatus);
+           var CheckinStatusResult = await Object.values(dataModify.PassengersChackin.reduce((acc, item) => {
+              const { CheckinStatus, CouponOrder } = item;
+              acc[CouponOrder] = acc[CouponOrder] || { CheckinStatus: false, CouponOrder };
+              acc[CouponOrder].CheckinStatus = acc[CouponOrder].CheckinStatus || CheckinStatus;
+              return acc;
+          }, {}));
+            // var CheckinStatusResult = await Object.values(dataModify.PassengersChackin.reduce((acc, item) => {
+            //     const { CheckinStatus, CouponOrder } = item;
+            //     acc[CouponOrder] = acc[CouponOrder] || { CheckinStatus: false, CouponOrder };
+            //     acc[CouponOrder].CheckinStatus = acc[CouponOrder].CheckinStatus || CheckinStatus;
+            //     return acc;
+            // }, {})).filter(item => item.CheckinStatus);
         }
         for (const  pass in Passengers) {
           let special = {
@@ -2345,7 +2352,7 @@ class BookingService {
         var  PassengersA      = response.Passengers;
         var RefCustomer = response.PnrInformation.RefCustomerl
 
-        if(RefCustomer==null)
+        if(RefCustomer!==null)
         {
           response.PnrInformation.PartnerInformation.HasPartners = true;
         }
